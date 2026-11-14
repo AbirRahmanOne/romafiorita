@@ -1,0 +1,93 @@
+{
+  "brand": { "name": "Roma Fiorita" },
+  "nav": {
+    "bouquets": "Bouquets",
+    "plants": "Plants",
+    "occasions": "Occasions",
+    "about": "About",
+    "cart": "Cart",
+    "openMenu": "Open menu"
+  },
+  "home": {
+    "metaTitle": "Roma Fiorita — Flower Delivery in Rome & Italy",
+    "metaDescription": "Send fresh flowers to Rome and all of Italy from anywhere in the world. Same-day delivery in Rome, a photo of your real bouquet, all-in prices.",
+    "heroTitle": "Send love to Rome — and all of Italy — from anywhere in the world.",
+    "heroSubtitle": "Fresh flowers hand-delivered by our own riders in Rome, with a photo of the real bouquet before it arrives.",
+    "shopNow": "Shop bouquets",
+    "seeOccasions": "Browse occasions",
+    "featuredTitle": "Favourites this week"
+  },
+  "trust": {
+    "title": "Why people trust us",
+    "photoTitle": "A photo before delivery",
+    "photoBody": "We send you a photo of your real bouquet before it leaves the shop.",
+    "priceTitle": "All-in prices",
+    "priceBody": "The price you see includes everything. No hidden fees at checkout.",
+    "timeTitle": "On-time delivery",
+    "timeBody": "Same-day in Rome by our own riders; next-day by courier across Italy."
+  },
+  "product": {
+    "from": "From {price}",
+    "add": "Add to cart",
+    "sampleDescription": "A seasonal arrangement, freshly made in our Rome studio."
+  },
+  "footer": {
+    "tagline": "Flowers & gifts, delivered across Italy.",
+    "legalName": "[LEGAL COMPANY NAME]",
+    "address": "[ROME ADDRESS]",
+    "vat": "VAT (P.IVA): [VAT NUMBER]",
+    "pec": "PEC: [PEC EMAIL]",
+    "links": "Information",
+    "terms": "Terms of sale",
+    "privacy": "Privacy policy",
+    "cookies": "Cookie policy",
+    "contact": "Contact",
+    "payments": "Secure payments",
+    "rights": "All rights reserved."
+  },
+  "cookie": {
+    "message": "We use cookies for essential features and, with your consent, analytics.",
+    "accept": "Accept",
+    "reject": "Reject",
+    "policy": "Cookie policy"
+  },
+  "localeSwitcher": { "label": "Language", "it": "IT", "en": "EN" },
+  "admin": {
+    "wordmark": "Roma Fiorita · Admin",
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Orders",
+      "schedule": "Delivery Schedule",
+      "products": "Products",
+      "customers": "Customers",
+      "payments": "Payments",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "topbar": { "search": "Search", "notifications": "Notifications", "menu": "Menu" },
+    "kpi": {
+      "ordersToday": "Orders today",
+      "revenueToday": "Revenue today",
+      "pending": "Awaiting acceptance",
+      "deliveriesToday": "Deliveries today"
+    },
+    "empty": {
+      "dashboard": "No activity yet today.",
+      "orders": "No orders yet.",
+      "schedule": "No deliveries scheduled.",
+      "products": "No products yet.",
+      "customers": "No customers yet.",
+      "payments": "No payments yet.",
+      "analytics": "Analytics will appear once you have sales.",
+      "settings": "Configure zones, fees, slots and staff."
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Roma Fiorita Admin",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "hint": "Placeholder — authentication is wired to the API in a later phase."
+    }
+  }
+}

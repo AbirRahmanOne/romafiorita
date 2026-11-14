@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  /* --- Storefront: pink theme --- */
+  --color-rf-primary: #c2185b;
+  --color-rf-primary-hover: #a3134c;
+  --color-rf-primary-soft: #f8bbd0;
+  --color-rf-blush: #fce4ec;
+  --color-rf-bg: #fff7fa;
+  --color-rf-surface: #ffffff;
+  --color-rf-ink: #3a1f2b;
+  --color-rf-ink-muted: #6b4e5a;
+  --color-rf-border: #f3d1de;
+  --color-rf-success: #2e7d5b;
+  --color-rf-warning: #b26a00;
+  --color-rf-danger: #c62828;
+
+  /* --- Admin: blue & white theme --- */
+  --color-ad-primary: #2563eb;
+  --color-ad-primary-hover: #1d4ed8;
+  --color-ad-primary-soft: #dbeafe;
+  --color-ad-bg: #f5f8ff;
+  --color-ad-surface: #ffffff;
+  --color-ad-sidebar: #0f2a5f;
+  --color-ad-ink: #0f172a;
+  --color-ad-ink-muted: #475569;
+  --color-ad-border: #e2e8f0;
+
+  /* fonts come from next/font CSS variables set on <html> */
+  --font-heading: var(--font-cormorant);
+  --font-body: var(--font-dm-sans);
+  --font-admin: var(--font-inter);
+}
+
+body {
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

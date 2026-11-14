@@ -1,0 +1,93 @@
+{
+  "brand": { "name": "Roma Fiorita" },
+  "nav": {
+    "bouquets": "Bouquet",
+    "plants": "Piante",
+    "occasions": "Occasioni",
+    "about": "Chi siamo",
+    "cart": "Carrello",
+    "openMenu": "Apri il menu"
+  },
+  "home": {
+    "metaTitle": "Roma Fiorita — Consegna Fiori a Roma e in tutta Italia",
+    "metaDescription": "Invia fiori freschi a Roma e in tutta Italia da qualsiasi parte del mondo. Consegna in giornata a Roma, la foto del bouquet reale e prezzi tutto incluso.",
+    "heroTitle": "Fiori a domicilio a Roma e in tutta Italia, da qualsiasi parte del mondo.",
+    "heroSubtitle": "Fiori freschi consegnati a mano dai nostri rider a Roma, con la foto del bouquet reale prima della consegna.",
+    "shopNow": "Scopri i bouquet",
+    "seeOccasions": "Vedi le occasioni",
+    "featuredTitle": "I preferiti della settimana"
+  },
+  "trust": {
+    "title": "Perché si fidano di noi",
+    "photoTitle": "Una foto prima della consegna",
+    "photoBody": "Ti inviamo la foto del bouquet reale prima che parta dal negozio.",
+    "priceTitle": "Prezzi tutto incluso",
+    "priceBody": "Il prezzo che vedi comprende tutto. Nessun costo nascosto al checkout.",
+    "timeTitle": "Consegna puntuale",
+    "timeBody": "In giornata a Roma con i nostri rider; il giorno dopo in tutta Italia con corriere."
+  },
+  "product": {
+    "from": "Da {price}",
+    "add": "Aggiungi al carrello",
+    "sampleDescription": "Una composizione di stagione, creata a mano nel nostro studio a Roma."
+  },
+  "footer": {
+    "tagline": "Fiori e regali, consegnati in tutta Italia.",
+    "legalName": "[LEGAL COMPANY NAME]",
+    "address": "[ROME ADDRESS]",
+    "vat": "P. IVA: [VAT NUMBER]",
+    "pec": "PEC: [PEC EMAIL]",
+    "links": "Informazioni",
+    "terms": "Termini di vendita",
+    "privacy": "Informativa privacy",
+    "cookies": "Informativa cookie",
+    "contact": "Contatti",
+    "payments": "Pagamenti sicuri",
+    "rights": "Tutti i diritti riservati."
+  },
+  "cookie": {
+    "message": "Usiamo cookie per le funzioni essenziali e, con il tuo consenso, per le statistiche.",
+    "accept": "Accetta",
+    "reject": "Rifiuta",
+    "policy": "Informativa cookie"
+  },
+  "localeSwitcher": { "label": "Lingua", "it": "IT", "en": "EN" },
+  "admin": {
+    "wordmark": "Roma Fiorita · Admin",
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Ordini",
+      "schedule": "Calendario consegne",
+      "products": "Prodotti",
+      "customers": "Clienti",
+      "payments": "Pagamenti",
+      "analytics": "Statistiche",
+      "settings": "Impostazioni"
+    },
+    "topbar": { "search": "Cerca", "notifications": "Notifiche", "menu": "Menu" },
+    "kpi": {
+      "ordersToday": "Ordini di oggi",
+      "revenueToday": "Incasso di oggi",
+      "pending": "In attesa di accettazione",
+      "deliveriesToday": "Consegne di oggi"
+    },
+    "empty": {
+      "dashboard": "Nessuna attività oggi.",
+      "orders": "Ancora nessun ordine.",
+      "schedule": "Nessuna consegna in programma.",
+      "products": "Ancora nessun prodotto.",
+      "customers": "Ancora nessun cliente.",
+      "payments": "Ancora nessun pagamento.",
+      "analytics": "Le statistiche compariranno con le prime vendite.",
+      "settings": "Configura zone, costi, fasce orarie e staff."
+    },
+    "login": {
+      "title": "Accedi",
+      "subtitle": "Roma Fiorita Admin",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Accedi",
+      "hint": "Segnaposto — l'autenticazione sarà collegata all'API in una fase successiva."
+    }
+  }
+}

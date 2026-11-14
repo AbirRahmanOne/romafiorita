@@ -7,30 +7,32 @@ promise is **trust**: a real photo of the bouquet before delivery, all-in prices
 
 Languages: Italian (`it`) + English (`en`). Currency: **EUR only**.
 
-## Monorepo map
+## Repo map
 
 ```
-apps/web        Customer storefront (romafiorita.com) — Next.js (SSR/SSG), pink theme
-apps/admin      Admin dashboard (admin.romafiorita.com) — Vite + React SPA, blue/white theme
-apps/api        Backend (api.romafiorita.com) — FastAPI, Python 3.12
-packages/ui-tokens    Shared design tokens (both themes)
-packages/api-client   TS client generated from the API OpenAPI schema (never hand-written)
-.claude/skills/       Area playbooks — read the relevant one before working in its area
+frontend/   Next.js app (App Router): storefront (pink, SSR/SSG) + /admin routes (blue).
+            Serves romafiorita.com and admin.romafiorita.com.
+backend/    FastAPI + PostgreSQL 16 (api.romafiorita.com).
+docker-compose.yml   Postgres 16 + Redis + api, for local dev.
+.claude/skills/      Area playbooks — read the relevant one before working in its area.
 ```
+
+> Structure note: the project uses a simple `frontend/` + `backend/` split (not the
+> `apps/*` + `packages/*` monorepo some skills still describe). The admin lives as `/admin`
+> routes inside the Next.js app, not a separate Vite SPA. **Payments (Stripe) are out of
+> scope for this version.**
 
 ## Tech stack
 
-- **Web (storefront):** Next.js (App Router, latest stable), TypeScript strict, Tailwind,
-  shadcn/ui, next-intl (`/it`, `/en`). Public pages SSR/SSG (ISR for product/occasion/city
-  pages; cart/checkout dynamic) — SEO + AI-crawler friendly.
-- **Admin:** **Vite + React SPA** (TanStack Router or React Router, TanStack Query + TanStack
-  Table, Recharts), TypeScript strict, Tailwind, shadcn/ui. Behind login, no SEO → no SSR;
-  lightweight static build.
-- **API:** FastAPI, Pydantic v2, SQLAlchemy 2.0 async + Alembic, PostgreSQL 16. Background
-  jobs via **arq + Redis**.
-- **Services:** Stripe (Payment Element, descriptor `ROMAFIORITA`) + webhooks; Resend (React
-  Email) from `ordini@romafiorita.com`; Cloudflare R2 for images; SSE + Web Push for admin
-  alerts; GA4 on storefront.
+- **Frontend (`frontend/`):** Next.js (App Router, latest stable), React 19, TypeScript
+  strict, Tailwind v4, next-intl (`/it`, `/en`). Storefront pages SSR/SSG (ISR for
+  product/occasion/city pages) — SEO + AI-crawler friendly. Admin is `/admin/*` routes
+  (blue theme, behind login, not indexed).
+- **Backend (`backend/`):** FastAPI, Pydantic v2, SQLAlchemy 2.0 async + Alembic,
+  PostgreSQL 16. Background jobs via **arq + Redis** (later).
+- **Services (planned, later phases):** Resend (React Email) from `ordini@romafiorita.com`;
+  Cloudflare R2 for images; SSE + Web Push for admin alerts; GA4 on storefront. Stripe
+  payments are **deferred** (not in this version).
 - **Hosting:** web on Cloudflare (OpenNext adapter) or Render; admin as static files on
   Cloudflare; API + Postgres + Redis on Render, Frankfurt. Local dev: docker-compose
   (Postgres + Redis).
@@ -44,21 +46,27 @@ packages/api-client   TS client generated from the API OpenAPI schema (never han
 ## Run / test / lint
 
 ```bash
-# everything (from repo root)
-pnpm dev            # all apps
-pnpm build
-pnpm lint
-pnpm typecheck
-pnpm test
+# Infra (from repo root)
+docker compose up -d postgres redis     # Postgres 16 + Redis for local dev
+# or run the API in Docker too: docker compose up --build
 
-docker compose up   # Postgres 16 + Redis for local dev
+# Frontend (frontend/)
+npm install
+npm run dev          # http://localhost:3000  (/it, /en, /it/admin ...)
+npm run build && npm run lint
 
-# API (apps/api)
-uv run uvicorn app.main:app --reload
-uv run pytest
-uv run ruff check . && uv run mypy .
-uv run alembic upgrade head        # migrations
+# Backend (backend/)
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload           # http://localhost:8000/health
+pytest && ruff check . && mypy app
+alembic revision --autogenerate -m "msg" && alembic upgrade head
+python seed.py                          # sample products + Rome zone
 ```
+
+> Tooling note: this env has no pnpm/uv, so the frontend uses **npm** and the backend uses
+> **venv + pip**. First Alembic migration must be generated once Postgres is up (DB required
+> for autogenerate).
 
 Copy each app's `.env.example` to `.env` before running.
 
