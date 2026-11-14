@@ -1,6 +1,40 @@
+# Claude Code
+.claude/
+
+# IDE
 .idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Env / secrets
 .env
-.env.local
+.env.*
+!.env.example
+
+# Node / JS
 node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# Python
 __pycache__/
+*.py[cod]
 .venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
