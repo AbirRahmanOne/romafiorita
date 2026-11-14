@@ -11,15 +11,26 @@ Read before working here: **`backend-api-conventions`**. Domain rules:
 ## Layout
 
 ```
-app/main.py        FastAPI app + CORS + routers
+app/main.py        FastAPI app + CORS + error handler + routers
 app/config.py      pydantic-settings (.env)
-app/db.py          async engine + get_session dependency
+app/db.py          lazy async engine + get_session dependency
 app/models.py      SQLAlchemy models (14 tables)
-app/routers/       endpoints (health so far)
+app/schemas.py     Pydantic read models
+app/routers/       endpoints: health, products
+app/repositories/  DB access (products)
 alembic/           async migrations
+scripts/export_openapi.py   dump openapi.json (TS client source)
 seed.py            sample products + Rome zone + slot rule
-tests/             pytest (httpx ASGITransport)
+tests/             pytest against in-memory SQLite (httpx ASGITransport)
 ```
+
+## API
+
+- `GET /health` → `{"status":"ok"}`
+- `GET /products?occasion=&limit=&offset=` → `{items, total}` (active only)
+- `GET /products/{slug}` → product or 404
+- Errors use `{"error": {code, message, details}}` (see the handler in `main.py`).
+- Export schema: `python -m scripts.export_openapi` → `openapi.json`.
 
 ## Rules
 

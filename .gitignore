@@ -34,6 +34,12 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 
+# Generated API schema (run scripts/export_openapi.py)
+backend/openapi.json
+
+# Local SQLite dev database
+*.db
+
 # Logs
 *.log
 npm-debug.log*

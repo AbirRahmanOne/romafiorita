@@ -5,12 +5,13 @@ from datetime import time
 
 from sqlalchemy import select
 
-from app.db import SessionLocal
+from app.db import get_sessionmaker
 from app.models import DeliveryType, DeliveryZone, Product, TimeSlotRule
 
 
 async def seed() -> None:
-    async with SessionLocal() as session:
+    session_maker = get_sessionmaker()
+    async with session_maker() as session:
         existing = await session.scalar(select(Product).limit(1))
         if existing:
             print("Already seeded; skipping.")
