@@ -40,30 +40,51 @@ export default function Home({
 
   return (
     <>
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-        <div className="max-w-2xl">
-          <h1 className="font-[family-name:var(--font-cormorant)] text-4xl font-bold leading-tight text-rf-ink sm:text-5xl">
-            {t("heroTitle")}
-          </h1>
-          <p className="mt-5 text-lg text-rf-ink-muted">{t("heroSubtitle")}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/bouquets" className={buttonClasses({ size: "lg" })}>
-              {t("shopNow")}
-            </Link>
-            <Link
-              href="/occasions"
-              className={buttonClasses({ size: "lg", variant: "outline" })}
-            >
-              {t("seeOccasions")}
-            </Link>
+      <section className="mx-auto max-w-[1320px] px-4 pt-10 sm:px-8 sm:pt-16">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+          <div className="flex flex-col gap-6">
+            <span className="text-xs uppercase tracking-[0.14em] text-rf-primary-strong">
+              {t("eyebrow")}
+            </span>
+            <h1 className="font-[family-name:var(--font-cormorant)] text-5xl font-normal leading-[0.98] tracking-tight text-rf-ink text-balance sm:text-6xl lg:text-7xl">
+              {t("heroTitle")}
+            </h1>
+            <p className="max-w-lg text-lg leading-relaxed text-rf-ink-muted">
+              {t("heroSubtitle")}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/bouquets" className={buttonClasses({ size: "lg" })}>
+                {t("shopNow")}
+              </Link>
+              <Link
+                href="/occasions"
+                className={buttonClasses({ size: "lg", variant: "secondary" })}
+              >
+                {t("howItWorks")}
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-center gap-5 text-sm text-rf-ink-muted">
+              <span className="text-rf-primary">{t("rating")}</span>
+              <span>{t("reach")}</span>
+            </div>
           </div>
+
+          <figure className="m-0">
+            {/* ponytail: gradient placeholder until real R2 photography lands */}
+            <div className="rf-plate aspect-[11/10] w-full bg-gradient-to-br from-rf-primary-soft to-rf-blush" />
+            <figcaption className="mt-1 text-xs text-rf-ink-muted">
+              {t("heroCaption")}
+            </figcaption>
+          </figure>
         </div>
       </section>
 
-      <TrustStrip />
+      <div className="mt-16">
+        <TrustStrip />
+      </div>
 
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="mb-8 font-[family-name:var(--font-cormorant)] text-3xl font-semibold text-rf-ink">
+      <section className="mx-auto max-w-[1320px] px-4 py-16 sm:px-8">
+        <h2 className="mb-8 font-[family-name:var(--font-cormorant)] text-4xl font-semibold text-rf-ink">
           {t("featuredTitle")}
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

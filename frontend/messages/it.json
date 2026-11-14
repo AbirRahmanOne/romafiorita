@@ -1,20 +1,31 @@
 {
   "brand": { "name": "Roma Fiorita" },
+  "announcement": {
+    "sameDay": "In giornata a Roma — ordina entro le 14:00",
+    "national": "Il giorno dopo in tutta Italia · una foto di ogni bouquet prima della partenza"
+  },
   "nav": {
     "bouquets": "Bouquet",
     "plants": "Piante",
     "occasions": "Occasioni",
     "about": "Chi siamo",
     "cart": "Carrello",
+    "search": "Cerca",
+    "account": "Account",
     "openMenu": "Apri il menu"
   },
   "home": {
     "metaTitle": "Roma Fiorita — Consegna Fiori a Roma e in tutta Italia",
     "metaDescription": "Invia fiori freschi a Roma e in tutta Italia da qualsiasi parte del mondo. Consegna in giornata a Roma, la foto del bouquet reale e prezzi tutto incluso.",
+    "eyebrow": "Composizioni a mano a Roma · consegna in tutta Italia",
     "heroTitle": "Fiori a domicilio a Roma e in tutta Italia, da qualsiasi parte del mondo.",
-    "heroSubtitle": "Fiori freschi consegnati a mano dai nostri rider a Roma, con la foto del bouquet reale prima della consegna.",
-    "shopNow": "Scopri i bouquet",
+    "heroSubtitle": "Fiori freschi consegnati a mano dai nostri rider a Roma, con la foto del bouquet reale prima che parta dal laboratorio.",
+    "shopNow": "Invia fiori",
+    "howItWorks": "Come funziona",
     "seeOccasions": "Vedi le occasioni",
+    "rating": "★★★★★ 4,9 su Google · 2.184 recensioni",
+    "reach": "Oltre 41.000 bouquet inviati da 96 paesi",
+    "heroCaption": "Fotografato stamattina nel nostro laboratorio a Roma.",
     "featuredTitle": "I preferiti della settimana"
   },
   "trust": {

@@ -1,51 +1,75 @@
 import { useTranslations } from "next-intl";
-import { ShoppingBag } from "lucide-react";
+import { Search, User, ShoppingBag } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { buttonClasses } from "@/components/ui/button";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 
 export function Header() {
   const t = useTranslations("nav");
+  const a = useTranslations("announcement");
 
   const links = [
+    { href: "/occasions", label: t("occasions") },
     { href: "/bouquets", label: t("bouquets") },
     { href: "/plants", label: t("plants") },
-    { href: "/occasions", label: t("occasions") },
     { href: "/about", label: t("about") },
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-rf-border bg-rf-bg/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link
-          href="/"
-          className="font-[family-name:var(--font-cormorant)] text-2xl font-bold text-rf-ink"
-        >
-          Roma Fiorita
-        </Link>
-
-        <nav className="hidden items-center gap-6 md:flex">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-sm font-medium text-rf-ink-muted transition-colors hover:text-rf-primary"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <LocaleSwitcher />
-          <Link
-            href="/cart"
-            aria-label={t("cart")}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-rf-ink hover:bg-rf-blush focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rf-primary"
-          >
-            <ShoppingBag className="h-5 w-5" aria-hidden />
-          </Link>
+    <>
+      {/* Announcement bar */}
+      <div className="bg-rf-dark text-rf-surface">
+        <div className="mx-auto flex max-w-[1320px] flex-wrap justify-between gap-3 px-4 py-2 text-xs tracking-[0.06em] sm:px-8">
+          <span>{a("sameDay")}</span>
+          <span className="text-rf-border">{a("national")}</span>
         </div>
       </div>
-    </header>
+
+      <header className="sticky top-0 z-40 border-b border-rf-border bg-rf-bg">
+        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center gap-7 px-4 py-3.5 sm:px-8">
+          <Link
+            href="/"
+            className="font-[family-name:var(--font-cormorant)] text-3xl leading-none tracking-wide text-rf-ink"
+          >
+            Roma <em className="not-italic text-rf-primary">Fiorita</em>
+          </Link>
+
+          <nav className="mr-auto hidden flex-wrap items-center gap-6 text-sm md:flex">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="whitespace-nowrap text-rf-ink transition-colors hover:text-rf-primary-strong"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-1">
+            <LocaleSwitcher />
+            <button
+              aria-label={t("search")}
+              className="flex h-9 w-9 items-center justify-center rounded-[4px] text-rf-ink hover:bg-rf-ink/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rf-primary"
+            >
+              <Search className="h-[18px] w-[18px]" aria-hidden />
+            </button>
+            <button
+              aria-label={t("account")}
+              className="flex h-9 w-9 items-center justify-center rounded-[4px] text-rf-ink hover:bg-rf-ink/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rf-primary"
+            >
+              <User className="h-[18px] w-[18px]" aria-hidden />
+            </button>
+            <Link
+              href="/cart"
+              aria-label={t("cart")}
+              className={buttonClasses({ variant: "secondary", className: "gap-2" })}
+            >
+              <ShoppingBag className="h-[17px] w-[17px]" aria-hidden />
+            </Link>
+          </div>
+        </div>
+      </header>
+    </>
   );
 }

@@ -1,17 +1,17 @@
-import { Cormorant_Garamond, DM_Sans, Inter } from "next/font/google";
+import { Cormorant_Garamond, Lora, Inter } from "next/font/google";
 
-// Storefront
+// Storefront — "Classical" system: Cormorant headings, Lora body.
 export const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-cormorant",
   display: "swap",
 });
 
-export const dmSans = DM_Sans({
+export const lora = Lora({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-dm-sans",
+  weight: ["400", "500", "600"],
+  variable: "--font-lora",
   display: "swap",
 });
 

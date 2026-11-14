@@ -16,13 +16,13 @@ export function ProductCard({ product }: { product: SampleProduct }) {
       <Link href={`/bouquets/${product.slug}`} className="block">
         {/* ponytail: gradient placeholder until real R2 photography lands */}
         <div
-          className="aspect-[4/5] bg-gradient-to-br from-rf-primary-soft to-rf-blush"
+          className="rf-plate aspect-[4/5] bg-gradient-to-br from-rf-primary-soft to-rf-blush"
           aria-hidden
         />
       </Link>
       <div className="space-y-2 p-4">
         <Badge>{occasionLabel(product.occasion, locale)}</Badge>
-        <h3 className="font-[family-name:var(--font-cormorant)] text-xl font-semibold text-rf-ink">
+        <h3 className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-rf-ink">
           <Link href={`/bouquets/${product.slug}`}>{product.name[locale]}</Link>
         </h3>
         <p className="line-clamp-2 text-sm text-rf-ink-muted">

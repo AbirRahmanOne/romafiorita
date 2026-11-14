@@ -8,7 +8,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full bg-rf-primary-soft px-3 py-1 text-xs font-medium text-rf-ink",
+        "inline-flex items-center text-xs font-medium uppercase tracking-[0.14em] text-rf-primary-strong",
         className,
       )}
       {...props}

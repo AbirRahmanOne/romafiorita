@@ -1,20 +1,31 @@
 {
   "brand": { "name": "Roma Fiorita" },
+  "announcement": {
+    "sameDay": "Same-day in Rome — order before 14:00",
+    "national": "Next-day across Italy · a photo of every bouquet before it leaves"
+  },
   "nav": {
     "bouquets": "Bouquets",
     "plants": "Plants",
     "occasions": "Occasions",
     "about": "About",
     "cart": "Cart",
+    "search": "Search",
+    "account": "Account",
     "openMenu": "Open menu"
   },
   "home": {
     "metaTitle": "Roma Fiorita — Flower Delivery in Rome & Italy",
     "metaDescription": "Send fresh flowers to Rome and all of Italy from anywhere in the world. Same-day delivery in Rome, a photo of your real bouquet, all-in prices.",
+    "eyebrow": "Hand-tied in Rome · delivered all over Italy",
     "heroTitle": "Send love to Rome — and all of Italy — from anywhere in the world.",
-    "heroSubtitle": "Fresh flowers hand-delivered by our own riders in Rome, with a photo of the real bouquet before it arrives.",
-    "shopNow": "Shop bouquets",
+    "heroSubtitle": "Fresh flowers hand-delivered by our own riders in Rome, with a photo of the real bouquet before it leaves our workshop.",
+    "shopNow": "Send flowers",
+    "howItWorks": "How it works",
     "seeOccasions": "Browse occasions",
+    "rating": "★★★★★ 4.9 on Google · 2,184 reviews",
+    "reach": "41,000+ bouquets sent from 96 countries",
+    "heroCaption": "Photographed in our Rome workshop this morning.",
     "featuredTitle": "Favourites this week"
   },
   "trust": {

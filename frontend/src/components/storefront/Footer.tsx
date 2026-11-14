@@ -15,8 +15,8 @@ export function Footer() {
     <footer className="mt-20 border-t border-rf-border bg-rf-blush/50">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <p className="font-[family-name:var(--font-cormorant)] text-2xl font-bold text-rf-ink">
-            Roma Fiorita
+          <p className="font-[family-name:var(--font-cormorant)] text-3xl text-rf-ink">
+            Roma <em className="not-italic text-rf-primary">Fiorita</em>
           </p>
           <p className="mt-2 max-w-xs text-sm text-rf-ink-muted">{t("tagline")}</p>
         </div>
