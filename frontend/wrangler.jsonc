@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "romafiorita-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Set NEXT_PUBLIC_API_URL in the Cloudflare dashboard (Settings → Variables)
+  // so SSR pages can reach the API, e.g. https://api.romafiorita.com
+}
