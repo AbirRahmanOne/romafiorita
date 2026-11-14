@@ -94,7 +94,7 @@ class Staff(Base, TimestampMixin):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(255))
-    role: Mapped[StaffRole] = mapped_column(Enum(StaffRole))
+    role: Mapped[StaffRole] = mapped_column(Enum(StaffRole, native_enum=False))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
@@ -146,9 +146,7 @@ class Product(Base, TimestampMixin):
     seo_title_it: Mapped[str | None] = mapped_column(String(255))
     seo_title_en: Mapped[str | None] = mapped_column(String(255))
 
-    variants: Mapped[list[ProductVariant]] = relationship(
-        back_populates="product"
-    )
+    variants: Mapped[list[ProductVariant]] = relationship(back_populates="product")
 
 
 class ProductVariant(Base, TimestampMixin):
@@ -183,7 +181,9 @@ class DeliveryZone(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
     cap_prefix: Mapped[str] = mapped_column(String(5), index=True)  # e.g. "001"
-    delivery_type: Mapped[DeliveryType] = mapped_column(Enum(DeliveryType))
+    delivery_type: Mapped[DeliveryType] = mapped_column(
+        Enum(DeliveryType, native_enum=False)
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
@@ -191,7 +191,9 @@ class TimeSlotRule(Base, TimestampMixin):
     __tablename__ = "time_slot_rules"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    delivery_type: Mapped[DeliveryType] = mapped_column(Enum(DeliveryType))
+    delivery_type: Mapped[DeliveryType] = mapped_column(
+        Enum(DeliveryType, native_enum=False)
+    )
     step_minutes: Mapped[int] = mapped_column(Integer, default=15)
     capacity_per_rider: Mapped[int] = mapped_column(Integer, default=1)
     # Same-day cutoff (Europe/Rome). Placeholder default 14:00.
@@ -211,12 +213,16 @@ class Order(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     status: Mapped[OrderStatus] = mapped_column(
-        Enum(OrderStatus), default=OrderStatus.PENDING_PAYMENT, index=True
+        Enum(OrderStatus, native_enum=False),
+        default=OrderStatus.PENDING_PAYMENT,
+        index=True,
     )
     customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"))
     recipient_id: Mapped[int | None] = mapped_column(ForeignKey("recipients.id"))
 
-    delivery_type: Mapped[DeliveryType] = mapped_column(Enum(DeliveryType))
+    delivery_type: Mapped[DeliveryType] = mapped_column(
+        Enum(DeliveryType, native_enum=False)
+    )
     delivery_date: Mapped[date | None] = mapped_column(Date)
     slot_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     slot_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -240,9 +246,7 @@ class OrderItem(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
     product_id: Mapped[int | None] = mapped_column(ForeignKey("products.id"))
-    variant_id: Mapped[int | None] = mapped_column(
-        ForeignKey("product_variants.id")
-    )
+    variant_id: Mapped[int | None] = mapped_column(ForeignKey("product_variants.id"))
     name_snapshot: Mapped[str] = mapped_column(String(255))
     quantity: Mapped[int] = mapped_column(Integer, default=1)
     unit_price_cents: Mapped[int] = mapped_column(Integer)
@@ -256,8 +260,12 @@ class OrderEvent(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
     actor: Mapped[str] = mapped_column(String(64))  # staff email or "system"
-    from_status: Mapped[OrderStatus | None] = mapped_column(Enum(OrderStatus))
-    to_status: Mapped[OrderStatus | None] = mapped_column(Enum(OrderStatus))
+    from_status: Mapped[OrderStatus | None] = mapped_column(
+        Enum(OrderStatus, native_enum=False)
+    )
+    to_status: Mapped[OrderStatus | None] = mapped_column(
+        Enum(OrderStatus, native_enum=False)
+    )
     note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
@@ -292,7 +300,7 @@ class Payment(Base, TimestampMixin):
     amount_cents: Mapped[int] = mapped_column(Integer)
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
     status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus), default=PaymentStatus.PENDING
+        Enum(PaymentStatus, native_enum=False), default=PaymentStatus.PENDING
     )
 
 
