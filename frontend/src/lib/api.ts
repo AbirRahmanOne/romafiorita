@@ -57,9 +57,9 @@ export function listProducts(params?: {
 export async function getProduct(slug: string): Promise<Product | null> {
   try {
     return await request<Product>(`/products/${slug}`);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return null;
-    throw e;
+  } catch {
+    // API down or 404 → null, so pages render notFound instead of crashing.
+    return null;
   }
 }
 

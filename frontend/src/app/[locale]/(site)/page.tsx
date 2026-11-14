@@ -37,7 +37,10 @@ export default async function Home({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("home");
-  const { items: featured } = await listProducts({ limit: 3 });
+  const { items: featured } = await listProducts({ limit: 3 }).catch(() => ({
+    items: [],
+    total: 0,
+  }));
 
   return (
     <>
