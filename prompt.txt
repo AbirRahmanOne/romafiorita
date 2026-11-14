@@ -1,0 +1,336 @@
+You are a senior full-stack engineer and product designer. We are starting a new production project. Work carefully and professionally, and follow the phases below in order. Do NOT build business features until Phase 0 and Phase 1 are complete and I have reviewed them.
+
+══════════════════════════════════════
+PROJECT BRIEF
+══════════════════════════════════════
+Brand: Roma Fiorita
+Website: https://romafiorita.com
+What it is: an online flower and gift shop based in Rome (Roma), Italy.
+
+Model: customers anywhere in the world order and pay online. Delivery happens ONLY inside Italy.
+- Rome: same-day delivery by the shop's own riders. Customers can book the delivery time as:
+  - Standard (any time in the day)
+  - a 2-hour window (+fee)
+  - an exact time, ±15 min (+fee)
+- Rest of Italy: next-day boxed bouquet delivery by courier, date only.
+
+Main buyer: lives abroad and sends flowers to a loved one in Italy. Trust is everything:
+- the shop sends a photo of the real bouquet before delivery
+- all-in prices, no hidden fees
+- on-time delivery
+
+Languages: Italian (it) and English (en).
+- URLs: romafiorita.com/it/... and romafiorita.com/en/...
+- No auto-redirect by location.
+- Currency: EUR only.
+
+Brand voice:
+- EN: warm, romantic, honest. Example hero: "Send love to Rome — and all of Italy — from anywhere in the world."
+- IT: elegant, warm. Example hero: "Fiori a domicilio a Roma e in tutta Italia, da qualsiasi parte del mondo."
+- Logo: use a temporary elegant wordmark "Roma Fiorita" (Cormorant Garamond) until the real logo is supplied.
+
+Products at launch: bouquets, plants, gift add-ons (cards, teddy bears, balloons, vases). No food or alcohol.
+
+Occasions: Love/Anniversary, Birthday, Valentine's Day, Festa della Donna (8 March), Festa della Mamma, Sympathy, Thank you, Get well, Christmas, Corporate.
+
+Owner needs an admin dashboard (blue/white theme) to:
+- receive and accept/decline orders in real time
+- process orders through delivery
+- update products
+- see the delivery schedule
+- see Stripe payment history
+- see basic analytics
+
+Planned domains:
+- Storefront: romafiorita.com (www redirects to apex)
+- Admin: admin.romafiorita.com
+- API: api.romafiorita.com
+- Emails sent from: ordini@romafiorita.com (display name "Roma Fiorita"); support/reply-to: info@romafiorita.com
+
+══════════════════════════════════════
+TECH STACK (use these unless you have a strong reason; explain any deviation)
+══════════════════════════════════════
+Monorepo (pnpm workspaces + uv for Python):
+
+/apps/web — Customer storefront (romafiorita.com)
+- Next.js (App Router, latest stable), TypeScript strict, Tailwind CSS, shadcn/ui
+- next-intl for i18n
+- Server-side rendering for all public pages (SEO and AI-crawler friendly)
+
+/apps/admin — Admin dashboard (admin.romafiorita.com)
+- Next.js + TypeScript + Tailwind + shadcn/ui, separate app with its own theme
+- TanStack Table, Recharts
+
+/apps/api — Backend (api.romafiorita.com)
+- FastAPI, Python 3.12, Pydantic v2
+- SQLAlchemy 2.0 (async) + Alembic, PostgreSQL 16
+- Background jobs: arq + Redis (reminders, emails, notification fan-out)
+
+/packages/ui-tokens — Shared design tokens (both themes)
+
+/packages/api-client — TypeScript client generated from FastAPI's OpenAPI schema; never hand-written
+
+Services:
+- Payments: Stripe (Payment Element, Apple Pay, Google Pay, PayPal via Stripe, 3D Secure, Radar) and Stripe webhooks. Statement descriptor: "ROMAFIORITA".
+- Email: Resend (transactional templates with React Email), sending domain romafiorita.com (SPF/DKIM/DMARC)
+- Images: Cloudflare R2 (S3-compatible) with signed uploads; next/image for optimisation
+- Real-time new-order alerts in admin: Server-Sent Events from FastAPI, plus Web Push
+- Analytics: GA4 on the storefront. In admin v1, show sales analytics from our own DB, plus an embedded Looker Studio report for GA4/Search Console/Ads.
+- Hosting: Render, Frankfurt region (web service ×3, Postgres, Key Value/Redis, cron). Provide render.yaml with the custom domains above.
+- Local dev: docker-compose for Postgres + Redis; .env.example for every app
+
+Quality:
+- ESLint + Prettier; Ruff + mypy (strict on app code)
+- Vitest + Playwright (web/admin); pytest + httpx (api)
+- Pre-commit hooks
+- GitHub Actions CI: lint, typecheck, test on every PR
+
+══════════════════════════════════════
+DESIGN SYSTEMS
+══════════════════════════════════════
+1) STOREFRONT — PINK THEME (romantic, elegant, warm, premium but friendly; a feeling of Roman spring)
+
+Colour tokens:
+- primary:            #C2185B  (deep pink — buttons, links; white text on it passes WCAG AA)
+- primary-hover:      #A3134C
+- primary-soft:       #F8BBD0  (badges, highlights)
+- blush:              #FCE4EC  (section backgrounds)
+- background:         #FFF7FA  (page background, soft pink-white)
+- surface:            #FFFFFF  (cards)
+- ink:                #3A1F2B  (headings, body text — deep plum-brown, never pure black)
+- ink-muted:          #6B4E5A
+- border:             #F3D1DE
+- success (fresh):    #2E7D5B
+- warning:            #B26A00
+- danger:             #C62828
+
+Typography:
+- Headings and wordmark: "Cormorant Garamond" (600/700)
+- Body/UI: "DM Sans" (400/500/700)
+- Load via next/font.
+
+Style:
+- Rounded corners: 12–20px cards, full-pill buttons.
+- Soft shadows.
+- Generous whitespace.
+- Large real product photography; subtle Roman touches (e.g. delivery photos around Rome).
+- Subtle motion only (respect prefers-reduced-motion).
+
+2) ADMIN DASHBOARD — BLUE & WHITE THEME (clean, calm, data-first, highly usable on phone)
+
+Colour tokens:
+- primary:            #2563EB  (actions, active nav)
+- primary-hover:      #1D4ED8
+- primary-soft:       #DBEAFE
+- background:         #F5F8FF
+- surface:            #FFFFFF
+- sidebar:            #0F2A5F  (navy) with white text and the "Roma Fiorita · Admin" wordmark
+- ink:                #0F172A
+- ink-muted:          #475569
+- border:             #E2E8F0
+- Status colours, always paired with a text label:
+  - new: blue
+  - accepted: indigo
+  - preparing: amber
+  - out-for-delivery: violet
+  - delivered: green
+  - cancelled/refunded: slate/red
+
+Typography: "Inter" for everything; tabular numbers in tables and KPIs.
+
+Both themes:
+- WCAG AA contrast, 44px minimum tap targets, visible focus rings.
+- Never use colour as the only signal.
+
+══════════════════════════════════════
+PHASE 0 — PROJECT MEMORY & SKILLS (do this first)
+══════════════════════════════════════
+Create the project guidance files for Claude Code.
+
+A) /CLAUDE.md (root) containing:
+- project summary (Roma Fiorita, romafiorita.com)
+- monorepo map
+- tech stack
+- domains
+- how to run, test and lint each app
+- coding conventions
+- git conventions (Conventional Commits, small PRs)
+- definition of done
+- the rule: "read the relevant skill in .claude/skills before working in its area"
+
+Keep it concise (under ~200 lines). Add short CLAUDE.md files inside apps/web, apps/admin and apps/api with app-specific notes.
+
+B) Skills in .claude/skills/<skill-name>/SKILL.md
+Each SKILL.md starts with YAML frontmatter:
+  ---
+  name: <kebab-case-name>
+  description: <one sentence saying WHEN to use this skill>
+  ---
+followed by clear, specific, actionable instructions, checklists and short code examples. Put longer references next to SKILL.md (e.g. reference.md, examples/) and link them.
+
+Create these skills:
+
+1. storefront-design-system
+   - Pink tokens as Tailwind theme + CSS variables
+   - Roma Fiorita wordmark usage, typography scale
+   - Component rules (Button, Card, Badge, Input, DatePicker, TimeChip, Stepper, ProductCard, TrustStrip, CountdownTimer)
+   - Photography rules, accessibility checklist
+   - "Trust elements" that must appear on product, cart and checkout pages
+
+2. admin-design-system
+   - Blue/white tokens, layout (navy sidebar + top bar), tables, KPI cards, charts, status badges, forms
+   - Mobile behaviour of the order inbox
+   - Empty/loading/error states
+
+3. i18n-seo
+   - next-intl setup, message file structure (messages/it.json, messages/en.json), no hard-coded strings
+   - Italian is ~25% longer, so layouts must flex
+   - Localised slugs (e.g. /en/flower-delivery-rome, /it/consegna-fiori-roma)
+   - hreflang + x-default, canonical URLs on https://romafiorita.com, sitemap.xml per locale, robots.txt
+   - robots.txt allows OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Googlebot, Bingbot
+   - Metadata API usage, with default titles like "Roma Fiorita — Flower Delivery in Rome & Italy" / "Roma Fiorita — Consegna Fiori a Roma e in tutta Italia"
+   - JSON-LD: Organization (name "Roma Fiorita", url, logo, sameAs), Florist/LocalBusiness (Rome address placeholder), Product + Offer + shippingDetails, BreadcrumbList
+   - Landing-page rules: Rome neighbourhood pages (e.g. Trastevere, Prati, Parioli, EUR, Centro Storico) and other Italian cities, with real data only, no thin duplicate pages
+   - Core Web Vitals targets: LCP < 2.5s, INP < 200ms, CLS < 0.1
+
+4. checkout-and-delivery-rules
+   - Domain rules for delivery zones by postcode (CAP): Rome CAP ranges (001xx) for own-rider delivery; all other Italian CAPs go by courier
+   - Delivery types: ROME_SAME_DAY, ROME_WINDOW, ROME_EXACT, NATIONAL_COURIER
+   - Time slots in 15-min steps, slot capacity per rider, cut-off rules (exact time ≥ [3]h ahead), blocked dates and peak-day caps
+   - Europe/Rome timezone as source of truth; display sender's local time too
+   - Fees, recipient address types, "recipient not home" options, card message limits, hide-sender option
+   - Include a decision table and test cases
+
+5. stripe-payments
+   - Payment Element + PaymentIntents (EUR), statement descriptor ROMAFIORITA
+   - Idempotency keys
+   - Webhook handling: payment_intent.succeeded/failed, charge.refunded, charge.dispute.created, payout.paid
+   - Signature verification, idempotent event processing (store event ids)
+   - Refunds (full/partial) from admin
+   - Never trust client amounts: recompute server-side
+   - Radar/3DS
+   - Payment history, payouts and balance via Stripe API for the admin
+   - Test-mode cards and the Stripe CLI for local webhooks
+
+6. order-lifecycle
+   - Order numbers formatted RF-YYYY-NNNNN
+   - State machine: PENDING_PAYMENT → NEW (paid) → ACCEPTED → PREPARING → PHOTO_SENT → OUT_FOR_DELIVERY → DELIVERED
+   - Side states: DECLINED (auto full refund), CANCELLED, REFUNDED, PROBLEM
+   - Allowed transitions, who can trigger them (roles), side effects per transition (emails, push, audit log)
+   - Accept-with-change flow (sender approval)
+   - Auto-accept setting and acceptance timeout alerts
+
+7. backend-api-conventions
+   - FastAPI project layout: routers / services / repositories / schemas / models
+   - Async SQLAlchemy patterns, Alembic migration rules
+   - Pydantic v2 schemas, error format, pagination, money as integer cents
+   - Timestamps in UTC with Europe/Rome conversion in the service layer
+   - Settings via pydantic-settings
+   - Structured logging, rate limiting
+   - CORS limited to romafiorita.com and admin.romafiorita.com (+ localhost in dev)
+   - Auth: admin JWT in httpOnly cookies, roles OWNER / MANAGER / FLORIST / RIDER
+   - Customer accounts optional (guest checkout)
+   - OpenAPI → TS client generation
+
+8. admin-dashboard-features
+   - Screens and data each one needs:
+     - Dashboard KPIs
+     - New-orders inbox (real-time SSE + Web Push + sound; accept / accept-with-change / decline)
+     - Order detail (timeline, upload bouquet photo, assign rider, refund, print branded Roma Fiorita card and delivery note)
+     - Delivery schedule (day/week by booked time, capacity, late-risk alerts)
+     - Products CRUD (IT/EN fields side by side, sizes, add-ons, availability, SEO fields, image upload to R2)
+     - Customers & reminders, discount codes
+     - Payments (Stripe history, refunds, payouts, disputes, CSV export, monthly accountant report)
+     - Analytics (own sales data + embedded Looker Studio)
+     - Settings (zones, fees, slots, blocked dates, notification recipients, staff & roles)
+   - Role-based visibility: riders and florists never see payment data
+
+9. notifications-and-reminders
+   - Roma Fiorita-branded email templates (order confirmation, accepted, bouquet photo, out for delivery, delivered, reminder, abandoned cart, declined/refunded) in IT and EN, sent from ordini@romafiorita.com
+   - Occasion reminders 7 and 2 days before, via arq scheduled jobs
+   - Web Push for admin
+   - WhatsApp messages as a later add-on behind a feature flag
+
+10. testing-and-quality
+    - Test pyramid
+    - Required tests per area (delivery-rule unit tests, webhook tests with fixtures, order state-machine tests, Playwright happy path: home → product → exact-time checkout in Rome → confirmation → admin accept → delivered)
+    - Lint/type rules, CI pipeline, definition of done
+
+11. deployment-render
+    - render.yaml: Frankfurt services, env vars, health checks, pre-deploy Alembic migrations, cron jobs
+    - Custom domains (romafiorita.com, www → apex redirect, admin.romafiorita.com, api.romafiorita.com) + SSL
+    - DNS checklist (Render records + Resend SPF/DKIM/DMARC), R2 bucket + CORS
+    - Stripe live keys and webhook endpoint (https://api.romafiorita.com/webhooks/stripe), backups, zero-downtime deploys
+    - Never let free-tier instances sleep in production
+    - Basic monitoring (health endpoint, error logging)
+
+12. legal-and-compliance-italy
+    - Footer business identity: "Roma Fiorita" trading name + legal company name, address in Rome, Partita IVA, PEC (placeholders until provided)
+    - Terms of sale: perishable goods are excluded from the 14-day withdrawal right; substitution policy; all-in price display
+    - GDPR: cookie consent before analytics, privacy policy, data retention
+    - Explicit consent for any recipient photo used in marketing
+    - Note that the accountant/lawyer must review final legal texts
+
+After creating the skills, list them with a one-line summary each.
+
+══════════════════════════════════════
+PHASE 1 — SCAFFOLD THE MONOREPO (no business features yet)
+══════════════════════════════════════
+1. Initialise the monorepo "romafiorita":
+   - pnpm workspaces, apps/web, apps/admin, apps/api, packages/ui-tokens, packages/api-client
+   - root scripts: dev, build, lint, typecheck, test
+2. apps/web:
+   - Next.js + Tailwind + shadcn/ui + next-intl with /it and /en routes
+   - Pink theme from ui-tokens, fonts via next/font
+   - Layout with header (Roma Fiorita wordmark, nav, IT|EN switcher, cart icon), footer (legal links, business identity placeholders, payment icons) and a cookie-consent banner
+   - A placeholder home page using real components (hero with the brand headline, Button, Card, ProductCard with sample data)
+   - Default metadata, favicon placeholder, robots.txt and a sitemap stub for romafiorita.com
+3. apps/admin:
+   - Next.js + Tailwind + shadcn/ui with the blue/white theme
+   - Navy sidebar with "Roma Fiorita · Admin" (Dashboard, Orders, Delivery Schedule, Products, Customers, Payments, Analytics, Settings), top bar, login page
+   - Placeholder pages with correct layout and empty states
+4. apps/api:
+   - FastAPI with health endpoint, settings, async DB session, Alembic initialised
+   - Base models: User/Staff + roles, Product, ProductVariant, AddOn, DeliveryZone, TimeSlotRule, Order, OrderItem, OrderEvent (audit log), Customer, Recipient, Reminder, Payment, StripeEvent
+   - First migration and seed script with sample Roma Fiorita products in IT/EN (e.g. "Rose di Roma", "Primavera Romana", "Mimosa 8 Marzo") and Rome delivery zones
+   - OpenAPI → packages/api-client generation script
+5. docker-compose.yml (Postgres 16, Redis), .env.example files, render.yaml draft with the romafiorita.com domains.
+6. Tooling: ESLint, Prettier, Ruff, mypy, pre-commit, GitHub Actions CI, base tests passing.
+7. README.md ("Roma Fiorita — romafiorita.com") with setup steps.
+
+Then STOP and report:
+- the file tree (top 3 levels)
+- the commands to run everything locally
+- what was created
+- any decisions or assumptions you made
+- the proposed plan for Phase 2
+
+══════════════════════════════════════
+PHASE 2+ — FEATURE ROADMAP (plan only for now; build after my approval)
+══════════════════════════════════════
+2. Catalog: products, occasions, filters, product page with delivery checker, add-ons, card message
+3. Delivery engine: Rome zones, slots, capacity, cut-offs, exact-time booking, national courier (with full unit tests)
+4. Cart + checkout + Stripe payments + webhooks + confirmation + tracking page
+5. Admin: real-time order inbox, accept/decline (auto-refund), order processing pipeline, bouquet photo upload, rider assignment, delivery schedule
+6. Admin: products CRUD with image upload, settings (zones, fees, slots, blocked dates, staff roles)
+7. Admin: Stripe payments page (history, refunds, payouts, disputes, CSV), dashboard KPIs, analytics
+8. Emails, reminders, customer accounts (order history, saved recipients, important dates)
+9. SEO: Rome neighbourhood + Italian city landing pages, blog/guide pages, sitemaps, JSON-LD, performance pass
+10. Hardening: E2E tests, security review, accessibility audit, Render production deploy on romafiorita.com
+
+══════════════════════════════════════
+WORKING RULES
+══════════════════════════════════════
+- Before each phase, show a short plan; ask me only if a decision is truly blocking.
+- Read the relevant skill before working in its area, and keep skills updated if a convention changes.
+- Never hard-code user-facing text: every string goes through i18n (it + en).
+- Never commit secrets; use .env and .env.example.
+- Money in integer cents (EUR); times stored in UTC, business logic in Europe/Rome.
+- Small, focused commits with Conventional Commit messages.
+- Every feature ships with tests and passes lint/typecheck before you call it done.
+- Placeholders to keep until I provide real values:
+  - legal company name, shop address in Rome, Partita IVA, PEC, phone/WhatsApp number
+  - same-day cut-off [14:00], exact-time minimum notice [3h]
+  - time-window fee €[X], exact-time fee €[Y]
+
+Start now with Phase 0.
