@@ -1,0 +1,41 @@
+# Render Blueprint — Roma Fiorita API (Frankfurt).
+# Deploys the FastAPI backend (Docker) + managed PostgreSQL 16.
+# The storefront/admin deploy to Cloudflare (see frontend/wrangler.jsonc), not here.
+#
+# Usage: Render Dashboard → New → Blueprint → point at this repo.
+# Adjust `plan` values to your account's available plans before applying.
+
+databases:
+  - name: romafiorita-db
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: romafiorita-api
+    runtime: docker
+    region: frankfurt
+    plan: starter # paid so it never sleeps in production
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    domains:
+      - api.romafiorita.com
+    # Run DB migrations before new traffic is routed (zero-downtime).
+    preDeployCommand: alembic upgrade head
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: romafiorita-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["https://romafiorita.com","https://admin.romafiorita.com"]'
+      # Added when background jobs (arq) land:
+      # - key: REDIS_URL
+      #   fromService: { type: keyvalue, name: romafiorita-redis, property: connectionString }
