@@ -1,12 +1,11 @@
-import { use } from "react";
 import type { Metadata } from "next";
-import { useLocale, useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/storefront/Breadcrumbs";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { cn } from "@/lib/utils";
-import { occasions, getProductsByOccasion } from "@/lib/sample-products";
+import { occasions } from "@/lib/occasions";
+import { listProducts } from "@/lib/api";
 import type { Locale } from "@/i18n/routing";
 
 export async function generateMetadata({
@@ -23,20 +22,20 @@ export async function generateMetadata({
   };
 }
 
-export default function BouquetsPage({
+export default async function BouquetsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ occasion?: string }>;
 }) {
-  const { locale } = use(params);
-  const { occasion } = use(searchParams);
+  const { locale } = await params;
+  const { occasion } = await searchParams;
   setRequestLocale(locale);
-  const t = useTranslations("catalog");
-  const activeLocale = useLocale() as Locale;
+  const t = await getTranslations("catalog");
+  const activeLocale = locale as Locale;
 
-  const products = getProductsByOccasion(occasion);
+  const { items: products } = await listProducts({ occasion });
 
   const chip = (label: string, href: string, active: boolean) => (
     <Link
@@ -44,9 +43,9 @@ export default function BouquetsPage({
       href={href}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "rounded-full border px-4 py-1.5 text-sm transition-colors",
+        "rounded-[4px] border px-4 py-1.5 text-sm transition-colors",
         active
-          ? "border-rf-primary bg-rf-primary text-white"
+          ? "border-rf-primary bg-rf-primary/10 text-rf-primary-strong"
           : "border-rf-border text-rf-ink-muted hover:border-rf-primary hover:text-rf-primary",
       )}
     >
@@ -55,14 +54,14 @@ export default function BouquetsPage({
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-[1320px] px-4 py-10 sm:px-8">
       <Breadcrumbs
         items={[
           { href: "/", label: t("home") },
           { href: "/bouquets", label: t("bouquetsTitle") },
         ]}
       />
-      <h1 className="font-[family-name:var(--font-cormorant)] text-4xl font-bold text-rf-ink">
+      <h1 className="font-[family-name:var(--font-cormorant)] text-5xl font-semibold text-rf-ink">
         {t("bouquetsTitle")}
       </h1>
       <p className="mt-2 max-w-2xl text-rf-ink-muted">

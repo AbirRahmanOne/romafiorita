@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/storefront/Breadcrumbs";
 import { Card } from "@/components/ui/card";
-import { occasions } from "@/lib/sample-products";
+import { occasions } from "@/lib/occasions";
 import type { Locale } from "@/i18n/routing";
 
 export async function generateMetadata({

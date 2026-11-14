@@ -1,12 +1,12 @@
-import { use } from "react";
+import Image from "next/image";
 import type { Metadata } from "next";
-import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { buttonClasses } from "@/components/ui/button";
 import { TrustStrip } from "@/components/storefront/TrustStrip";
 import { ProductCard } from "@/components/storefront/ProductCard";
-import { sampleProducts } from "@/lib/sample-products";
+import { listProducts } from "@/lib/api";
+import { HERO_IMAGE } from "@/lib/images";
 import { routing } from "@/i18n/routing";
 
 export async function generateMetadata({
@@ -29,14 +29,15 @@ export async function generateMetadata({
   };
 }
 
-export default function Home({
+export default async function Home({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = use(params);
+  const { locale } = await params;
   setRequestLocale(locale);
-  const t = useTranslations("home");
+  const t = await getTranslations("home");
+  const { items: featured } = await listProducts({ limit: 3 });
 
   return (
     <>
@@ -70,8 +71,16 @@ export default function Home({
           </div>
 
           <figure className="m-0">
-            {/* ponytail: gradient placeholder until real R2 photography lands */}
-            <div className="rf-plate aspect-[11/10] w-full bg-gradient-to-br from-rf-primary-soft to-rf-blush" />
+            <div className="rf-plate relative aspect-[11/10] w-full overflow-hidden">
+              <Image
+                src={HERO_IMAGE}
+                alt={t("heroCaption")}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+                priority
+              />
+            </div>
             <figcaption className="mt-1 text-xs text-rf-ink-muted">
               {t("heroCaption")}
             </figcaption>
@@ -88,7 +97,7 @@ export default function Home({
           {t("featuredTitle")}
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {sampleProducts.map((product) => (
+          {featured.map((product) => (
             <ProductCard key={product.slug} product={product} />
           ))}
         </div>

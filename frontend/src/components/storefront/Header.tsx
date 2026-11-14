@@ -1,8 +1,8 @@
 import { useTranslations } from "next-intl";
-import { Search, User, ShoppingBag } from "lucide-react";
+import { Search, User } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { buttonClasses } from "@/components/ui/button";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { CartLink } from "./CartLink";
 
 export function Header() {
   const t = useTranslations("nav");
@@ -60,13 +60,7 @@ export function Header() {
             >
               <User className="h-[18px] w-[18px]" aria-hidden />
             </button>
-            <Link
-              href="/cart"
-              aria-label={t("cart")}
-              className={buttonClasses({ variant: "secondary", className: "gap-2" })}
-            >
-              <ShoppingBag className="h-[17px] w-[17px]" aria-hidden />
-            </Link>
+            <CartLink />
           </div>
         </div>
       </header>

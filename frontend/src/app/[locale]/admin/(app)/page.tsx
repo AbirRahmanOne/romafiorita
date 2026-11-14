@@ -1,25 +1,31 @@
-import { use } from "react";
-import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Topbar } from "@/components/admin/Topbar";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { listProducts } from "@/lib/api";
 
-export default function AdminDashboard({
+export default async function AdminDashboard({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = use(params);
+  const { locale } = await params;
   setRequestLocale(locale);
-  const t = useTranslations("admin");
+  const t = await getTranslations("admin");
 
-  // Zeroed placeholders until the API feeds real KPIs.
+  // Only products have a backend so far; the rest are placeholders.
+  let productCount = 0;
+  try {
+    productCount = (await listProducts({ limit: 1 })).total;
+  } catch {
+    /* API down — show 0 */
+  }
+
   const kpis: Array<[string, string]> = [
     ["ordersToday", "0"],
     ["revenueToday", "€0,00"],
     ["pending", "0"],
-    ["deliveriesToday", "0"],
+    ["products", String(productCount)],
   ];
 
   return (

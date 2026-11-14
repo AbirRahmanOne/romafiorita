@@ -40,7 +40,70 @@
   "product": {
     "from": "From {price}",
     "add": "Add to cart",
+    "added": "Added",
     "sampleDescription": "A seasonal arrangement, freshly made in our Rome studio."
+  },
+  "cart": {
+    "title": "Your cart",
+    "empty": "Your cart is empty.",
+    "continue": "Continue shopping",
+    "remove": "Remove",
+    "qty": "Quantity",
+    "each": "each",
+    "subtotal": "Subtotal",
+    "deliveryNote": "Delivery fees are calculated at checkout based on the recipient's address.",
+    "checkout": "Checkout"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "summary": "Order summary",
+    "total": "Total",
+    "back": "Back to cart",
+    "note": "Online payment is not available in this version. Your order summary is shown below — checkout and payment arrive in a later release.",
+    "placeOrder": "Place order",
+    "empty": "There is nothing to check out.",
+    "confirmedTitle": "Thank you",
+    "confirmedBody": "This is a demo confirmation — no payment was taken and no order was created."
+  },
+  "plants": {
+    "title": "Plants & gifts",
+    "description": "Potted plants and gift add-ons are arriving soon. In the meantime, explore our bouquets.",
+    "cta": "Browse bouquets"
+  },
+  "about": {
+    "title": "About Roma Fiorita",
+    "p1": "Roma Fiorita is a flower and gift shop in the heart of Rome. We hand-tie every bouquet in our workshop and deliver across Italy.",
+    "p2": "Our promise is trust: we send a photo of your real bouquet before it leaves the shop, our prices are all-in with no hidden fees, and we deliver on time.",
+    "p3": "In Rome our own riders deliver the same day; across the rest of Italy we send next-day by courier."
+  },
+  "contact": {
+    "title": "Contact us",
+    "description": "We're here to help with orders and deliveries.",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address"
+  },
+  "legal": {
+    "updated": "Last updated: placeholder",
+    "reviewNote": "This is placeholder text and must be reviewed by a qualified professional before launch.",
+    "terms": {
+      "title": "Terms of sale",
+      "p1": "Prices are shown all-in in EUR and include everything stated on the product page.",
+      "p2": "Fresh flowers are perishable goods and are excluded from the 14-day right of withdrawal under Italian and EU consumer law.",
+      "p3": "Where a specific stem is unavailable, we may substitute it with one of equal or greater value and comparable style."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "p1": "We process your data to fulfil orders and deliveries. Processors include our hosting, email and image providers.",
+      "p2": "Non-essential cookies, including analytics, run only after you give consent in the cookie banner.",
+      "p3": "You may request access to or deletion of your personal data at any time."
+    },
+    "cookies": {
+      "title": "Cookie policy",
+      "p1": "Essential cookies keep your session and cart working and do not require consent.",
+      "p2": "Analytics cookies are loaded only after you accept them, and you can change your choice at any time.",
+      "p3": "See the privacy policy for how we handle the data these cookies collect."
+    }
   },
   "catalog": {
     "home": "Home",
@@ -103,7 +166,35 @@
       "ordersToday": "Orders today",
       "revenueToday": "Revenue today",
       "pending": "Awaiting acceptance",
-      "deliveriesToday": "Deliveries today"
+      "deliveriesToday": "Deliveries today",
+      "products": "Active products"
+    },
+    "products": {
+      "new": "New product",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "create": "Create product",
+      "update": "Edit product",
+      "slug": "Slug",
+      "nameIt": "Name (IT)",
+      "nameEn": "Name (EN)",
+      "descIt": "Description (IT)",
+      "descEn": "Description (EN)",
+      "price": "Price (€)",
+      "occasion": "Occasion",
+      "none": "None",
+      "active": "Active",
+      "confirmDelete": "Delete this product?",
+      "colName": "Name",
+      "colOccasion": "Occasion",
+      "colPrice": "Price",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "statusActive": "Active",
+      "statusHidden": "Hidden",
+      "saveError": "Could not save. Check the fields and try again."
     },
     "empty": {
       "dashboard": "No activity yet today.",

@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   images: {
     // ponytail: wide-open while scaffolding; tighten to the R2 host before prod.
     remotePatterns: [{ protocol: "https", hostname: "**" }],
+    // Our own placeholder art is SVG served from /public.
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
   },
   turbopack: {
     rules: {

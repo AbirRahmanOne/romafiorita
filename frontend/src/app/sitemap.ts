@@ -5,7 +5,17 @@ const SITE = "https://romafiorita.com";
 
 // Public, indexable paths (without locale prefix). Product/occasion pages get
 // added here from the API in a later phase.
-const paths = ["", "/bouquets", "/plants", "/occasions", "/about"];
+const paths = [
+  "",
+  "/bouquets",
+  "/plants",
+  "/occasions",
+  "/about",
+  "/contact",
+  "/terms",
+  "/privacy",
+  "/cookies",
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return paths.flatMap((path) =>

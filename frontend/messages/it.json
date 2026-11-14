@@ -40,7 +40,70 @@
   "product": {
     "from": "Da {price}",
     "add": "Aggiungi al carrello",
+    "added": "Aggiunto",
     "sampleDescription": "Una composizione di stagione, creata a mano nel nostro studio a Roma."
+  },
+  "cart": {
+    "title": "Il tuo carrello",
+    "empty": "Il tuo carrello è vuoto.",
+    "continue": "Continua lo shopping",
+    "remove": "Rimuovi",
+    "qty": "Quantità",
+    "each": "cad.",
+    "subtotal": "Subtotale",
+    "deliveryNote": "I costi di consegna sono calcolati al checkout in base all'indirizzo del destinatario.",
+    "checkout": "Vai al checkout"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "summary": "Riepilogo ordine",
+    "total": "Totale",
+    "back": "Torna al carrello",
+    "note": "Il pagamento online non è disponibile in questa versione. Qui sotto trovi il riepilogo dell'ordine — checkout e pagamento arriveranno in una versione successiva.",
+    "placeOrder": "Conferma ordine",
+    "empty": "Non c'è nulla da ordinare.",
+    "confirmedTitle": "Grazie",
+    "confirmedBody": "Questa è una conferma dimostrativa — nessun pagamento è stato effettuato e nessun ordine è stato creato."
+  },
+  "plants": {
+    "title": "Piante e regali",
+    "description": "Piante in vaso e regali in arrivo a breve. Nel frattempo, scopri i nostri bouquet.",
+    "cta": "Scopri i bouquet"
+  },
+  "about": {
+    "title": "Chi è Roma Fiorita",
+    "p1": "Roma Fiorita è un negozio di fiori e regali nel cuore di Roma. Creiamo ogni bouquet a mano nel nostro laboratorio e consegniamo in tutta Italia.",
+    "p2": "La nostra promessa è la fiducia: inviamo una foto del bouquet reale prima che parta dal negozio, i prezzi sono tutto incluso senza costi nascosti e consegniamo puntuali.",
+    "p3": "A Roma i nostri rider consegnano in giornata; nel resto d'Italia spediamo con corriere il giorno dopo."
+  },
+  "contact": {
+    "title": "Contattaci",
+    "description": "Siamo a disposizione per ordini e consegne.",
+    "email": "Email",
+    "phone": "Telefono",
+    "address": "Indirizzo"
+  },
+  "legal": {
+    "updated": "Ultimo aggiornamento: segnaposto",
+    "reviewNote": "Questo è un testo segnaposto e deve essere verificato da un professionista qualificato prima del lancio.",
+    "terms": {
+      "title": "Termini di vendita",
+      "p1": "I prezzi sono indicati tutto incluso in EUR e comprendono quanto riportato nella pagina del prodotto.",
+      "p2": "I fiori freschi sono beni deperibili ed esclusi dal diritto di recesso di 14 giorni ai sensi della normativa italiana ed europea.",
+      "p3": "Qualora un fiore specifico non fosse disponibile, potremo sostituirlo con uno di valore pari o superiore e stile analogo."
+    },
+    "privacy": {
+      "title": "Informativa privacy",
+      "p1": "Trattiamo i tuoi dati per evadere ordini e consegne. I responsabili includono i fornitori di hosting, email e immagini.",
+      "p2": "I cookie non essenziali, incluse le statistiche, vengono attivati solo dopo il tuo consenso nel banner dei cookie.",
+      "p3": "Puoi richiedere l'accesso o la cancellazione dei tuoi dati personali in qualsiasi momento."
+    },
+    "cookies": {
+      "title": "Informativa cookie",
+      "p1": "I cookie essenziali fanno funzionare sessione e carrello e non richiedono consenso.",
+      "p2": "I cookie statistici vengono caricati solo dopo la tua accettazione e puoi cambiare scelta in qualsiasi momento.",
+      "p3": "Consulta l'informativa privacy per come trattiamo i dati raccolti da questi cookie."
+    }
   },
   "catalog": {
     "home": "Home",
@@ -103,7 +166,35 @@
       "ordersToday": "Ordini di oggi",
       "revenueToday": "Incasso di oggi",
       "pending": "In attesa di accettazione",
-      "deliveriesToday": "Consegne di oggi"
+      "deliveriesToday": "Consegne di oggi",
+      "products": "Prodotti attivi"
+    },
+    "products": {
+      "new": "Nuovo prodotto",
+      "edit": "Modifica",
+      "delete": "Elimina",
+      "save": "Salva",
+      "cancel": "Annulla",
+      "create": "Crea prodotto",
+      "update": "Modifica prodotto",
+      "slug": "Slug",
+      "nameIt": "Nome (IT)",
+      "nameEn": "Nome (EN)",
+      "descIt": "Descrizione (IT)",
+      "descEn": "Descrizione (EN)",
+      "price": "Prezzo (€)",
+      "occasion": "Occasione",
+      "none": "Nessuna",
+      "active": "Attivo",
+      "confirmDelete": "Eliminare questo prodotto?",
+      "colName": "Nome",
+      "colOccasion": "Occasione",
+      "colPrice": "Prezzo",
+      "colStatus": "Stato",
+      "colActions": "Azioni",
+      "statusActive": "Attivo",
+      "statusHidden": "Nascosto",
+      "saveError": "Impossibile salvare. Controlla i campi e riprova."
     },
     "empty": {
       "dashboard": "Nessuna attività oggi.",

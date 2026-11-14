@@ -1,26 +1,19 @@
-import { use } from "react";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumbs } from "@/components/storefront/Breadcrumbs";
 import { DeliveryChecker } from "@/components/storefront/DeliveryChecker";
+import { AddToCartButton } from "@/components/storefront/AddToCartButton";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { JsonLd } from "@/components/JsonLd";
 import { formatPrice } from "@/lib/utils";
-import {
-  getProductBySlug,
-  occasionLabel,
-  sampleProducts,
-} from "@/lib/sample-products";
+import { occasionLabel } from "@/lib/occasions";
+import { productImage } from "@/lib/images";
+import { getProduct, productDescription, productName } from "@/lib/api";
 import type { Locale } from "@/i18n/routing";
 
 const SITE = "https://romafiorita.com";
-
-export function generateStaticParams() {
-  return sampleProducts.map((p) => ({ slug: p.slug }));
-}
 
 export async function generateMetadata({
   params,
@@ -28,37 +21,37 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProduct(slug);
   if (!product) return {};
   const l = locale as Locale;
   return {
-    title: product.name[l],
-    description: product.description[l],
+    title: productName(product, l),
+    description: productDescription(product, l),
     alternates: { canonical: `/${locale}/bouquets/${slug}` },
   };
 }
 
-export default function ProductPage({
+export default async function ProductPage({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale, slug } = use(params);
+  const { locale, slug } = await params;
   setRequestLocale(locale);
-  const product = getProductBySlug(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
 
-  const t = useTranslations();
-  const l = useLocale() as Locale;
+  const t = await getTranslations();
+  const l = locale as Locale;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.name[l],
-    description: product.description[l],
+    name: productName(product, l),
+    description: productDescription(product, l),
     offers: {
       "@type": "Offer",
-      price: (product.priceCents / 100).toFixed(2),
+      price: (product.base_price_cents / 100).toFixed(2),
       priceCurrency: "EUR",
       availability: "https://schema.org/InStock",
       url: `${SITE}/${locale}/bouquets/${slug}`,
@@ -66,43 +59,57 @@ export default function ProductPage({
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-[1320px] px-4 py-10 sm:px-8">
       <JsonLd data={jsonLd} />
       <Breadcrumbs
         items={[
           { href: "/", label: t("catalog.home") },
           { href: "/bouquets", label: t("catalog.bouquetsTitle") },
-          { href: `/bouquets/${slug}`, label: product.name[l] },
+          { href: `/bouquets/${slug}`, label: productName(product, l) },
         ]}
       />
 
       <div className="grid gap-10 lg:grid-cols-2">
-        {/* ponytail: gradient placeholder until real R2 photography lands */}
-        <div
-          className="aspect-[4/5] rounded-2xl bg-gradient-to-br from-rf-primary-soft to-rf-blush"
-          aria-hidden
-        />
+        <div className="rf-plate relative aspect-[4/5] overflow-hidden">
+          <Image
+            src={productImage(product.slug)}
+            alt={productName(product, l)}
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+            priority
+          />
+        </div>
 
         <div>
           <Badge>{occasionLabel(product.occasion, l)}</Badge>
-          <h1 className="mt-3 font-[family-name:var(--font-cormorant)] text-4xl font-bold text-rf-ink">
-            {product.name[l]}
+          <h1 className="mt-3 font-[family-name:var(--font-cormorant)] text-5xl font-semibold text-rf-ink">
+            {productName(product, l)}
           </h1>
-          <p className="mt-3 text-2xl font-medium text-rf-ink">
-            {formatPrice(product.priceCents, l)}
+          <p className="mt-3 text-2xl font-medium text-rf-primary-strong">
+            {formatPrice(product.base_price_cents, l)}
           </p>
 
           <div className="mt-6">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-rf-ink-muted">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-rf-ink-muted">
               {t("productDetail.descriptionTitle")}
             </h2>
-            <p className="mt-2 text-rf-ink-muted">{product.description[l]}</p>
+            <p className="mt-2 text-rf-ink-muted">
+              {productDescription(product, l)}
+            </p>
           </div>
 
           <div className="mt-6">
-            <Button size="lg" className="w-full sm:w-auto">
-              {t("product.add")}
-            </Button>
+            <AddToCartButton
+              size="lg"
+              className="w-full sm:w-auto"
+              item={{
+                slug: product.slug,
+                name: productName(product, l),
+                priceCents: product.base_price_cents,
+                image: productImage(product.slug),
+              }}
+            />
           </div>
 
           <div className="mt-8">

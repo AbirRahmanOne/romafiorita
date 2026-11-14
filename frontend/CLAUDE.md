@@ -18,7 +18,9 @@ src/app/[locale]/admin/login/ admin login (bare)
 src/app/robots.ts, sitemap.ts
 src/i18n/                      routing, navigation, request config (next-intl)
 src/components/{ui,storefront,admin}
-src/lib/                      utils (cn, formatPrice), fonts, sample data
+src/lib/api.ts                typed API client (fetch) + helpers
+src/lib/api-types.ts          generated from OpenAPI — DO NOT edit (npm run gen:api)
+src/lib/                      utils (cn, formatPrice), fonts, occasions
 messages/{it,en}.json         all UI copy — no hard-coded strings
 ```
 
@@ -30,5 +32,12 @@ messages/{it,en}.json         all UI copy — no hard-coded strings
 - Two themes via CSS vars in `globals.css`: `rf-*` (pink storefront), `ad-*` (blue admin).
 - Fonts via `next/font` (Cormorant + DM Sans storefront; Inter admin).
 - Pages read `params` with `use(params)` + `setRequestLocale(locale)` so they stay static.
-- Dev: `npm run dev`. Verify: `npm run build && npm run lint`. API base URL: `NEXT_PUBLIC_API_URL`.
+- Dev: `npm run dev`. Verify: `npm run build && npm run lint && npm test`. API base: `NEXT_PUBLIC_API_URL`.
+- Data: storefront catalog + admin Products read/write the backend via `src/lib/api.ts`.
+  Regenerate types after a backend schema change: `npm run gen:api` (backend must be running).
+- Admin screens other than Dashboard/Products are placeholders until their backend lands.
+- Cart is a client-side store (`src/lib/cart.tsx`, localStorage via `useSyncExternalStore`);
+  checkout is a no-payment summary/confirmation.
+- Product/hero images are static SVGs in `public/` mapped by `src/lib/images.ts` (swap for
+  real R2 photography later; `next.config.ts` sets `dangerouslyAllowSVG`).
 - **No Stripe / payments in this version.**
