@@ -31,6 +31,29 @@
     "add": "Add to cart",
     "sampleDescription": "A seasonal arrangement, freshly made in our Rome studio."
   },
+  "catalog": {
+    "home": "Home",
+    "bouquetsTitle": "Bouquets",
+    "bouquetsDescription": "Hand-made bouquets, delivered across Italy with a photo before delivery.",
+    "occasionsTitle": "Occasions",
+    "occasionsDescription": "Find the right flowers for every moment.",
+    "all": "All",
+    "filterLabel": "Filter by occasion",
+    "empty": "No products for this occasion yet.",
+    "shopOccasion": "Shop {occasion}"
+  },
+  "productDetail": {
+    "descriptionTitle": "Description",
+    "deliveryTitle": "Delivery"
+  },
+  "deliveryChecker": {
+    "title": "Where are we delivering?",
+    "placeholder": "Recipient postcode (CAP)",
+    "check": "Check",
+    "rome": "Same-day delivery in Rome by our own riders.",
+    "italy": "Next-day courier delivery across Italy.",
+    "unsupported": "Enter a valid 5-digit Italian postcode."
+  },
   "footer": {
     "tagline": "Flowers & gifts, delivered across Italy.",
     "legalName": "[LEGAL COMPANY NAME]",

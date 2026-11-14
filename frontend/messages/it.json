@@ -31,6 +31,29 @@
     "add": "Aggiungi al carrello",
     "sampleDescription": "Una composizione di stagione, creata a mano nel nostro studio a Roma."
   },
+  "catalog": {
+    "home": "Home",
+    "bouquetsTitle": "Bouquet",
+    "bouquetsDescription": "Bouquet creati a mano, consegnati in tutta Italia con una foto prima della consegna.",
+    "occasionsTitle": "Occasioni",
+    "occasionsDescription": "Trova i fiori giusti per ogni momento.",
+    "all": "Tutti",
+    "filterLabel": "Filtra per occasione",
+    "empty": "Ancora nessun prodotto per questa occasione.",
+    "shopOccasion": "Scopri {occasion}"
+  },
+  "productDetail": {
+    "descriptionTitle": "Descrizione",
+    "deliveryTitle": "Consegna"
+  },
+  "deliveryChecker": {
+    "title": "Dove consegniamo?",
+    "placeholder": "CAP del destinatario",
+    "check": "Verifica",
+    "rome": "Consegna in giornata a Roma con i nostri rider.",
+    "italy": "Consegna il giorno dopo con corriere in tutta Italia.",
+    "unsupported": "Inserisci un CAP italiano valido di 5 cifre."
+  },
   "footer": {
     "tagline": "Fiori e regali, consegnati in tutta Italia.",
     "legalName": "[LEGAL COMPANY NAME]",

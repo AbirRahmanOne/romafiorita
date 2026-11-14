@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import type { Locale } from "@/i18n/routing";
-import type { SampleProduct } from "@/lib/sample-products";
+import { occasionLabel, type SampleProduct } from "@/lib/sample-products";
 
 export function ProductCard({ product }: { product: SampleProduct }) {
   const locale = useLocale() as Locale;
@@ -21,11 +21,13 @@ export function ProductCard({ product }: { product: SampleProduct }) {
         />
       </Link>
       <div className="space-y-2 p-4">
-        <Badge>{product.occasion[locale]}</Badge>
+        <Badge>{occasionLabel(product.occasion, locale)}</Badge>
         <h3 className="font-[family-name:var(--font-cormorant)] text-xl font-semibold text-rf-ink">
           <Link href={`/bouquets/${product.slug}`}>{product.name[locale]}</Link>
         </h3>
-        <p className="text-sm text-rf-ink-muted">{t("sampleDescription")}</p>
+        <p className="line-clamp-2 text-sm text-rf-ink-muted">
+          {product.description[locale]}
+        </p>
         <div className="flex items-center justify-between pt-2">
           <span className="font-medium text-rf-ink">
             {t("from", { price: formatPrice(product.priceCents, locale) })}
