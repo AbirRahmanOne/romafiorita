@@ -35,7 +35,10 @@ export default async function BouquetsPage({
   const t = await getTranslations("catalog");
   const activeLocale = locale as Locale;
 
-  const { items: products } = await listProducts({ occasion });
+  const { items: products } = await listProducts({ occasion }).catch(() => ({
+    items: [],
+    total: 0,
+  }));
 
   const chip = (label: string, href: string, active: boolean) => (
     <Link
