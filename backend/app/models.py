@@ -12,6 +12,7 @@ import enum
 from datetime import UTC, date, datetime, time
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
     DateTime,
@@ -21,6 +22,7 @@ from sqlalchemy import (
     String,
     Text,
     Time,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -54,6 +56,12 @@ class StaffRole(enum.StrEnum):
     MANAGER = "MANAGER"
     FLORIST = "FLORIST"
     RIDER = "RIDER"
+
+
+class ProductTier(enum.StrEnum):
+    STANDARD = "STANDARD"
+    PREMIUM = "PREMIUM"
+    LUXURY = "LUXURY"
 
 
 class OrderStatus(enum.StrEnum):
@@ -150,29 +158,42 @@ class Product(Base, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(160), unique=True, index=True)
     name_it: Mapped[str] = mapped_column(String(255))
     name_en: Mapped[str] = mapped_column(String(255))
-    description_it: Mapped[str | None] = mapped_column(Text)
-    description_en: Mapped[str | None] = mapped_column(Text)
-    base_price_cents: Mapped[int] = mapped_column(Integer)
+    subtitle_it: Mapped[str | None] = mapped_column(String(255))
+    subtitle_en: Mapped[str | None] = mapped_column(String(255))
     occasion: Mapped[str | None] = mapped_column(String(64), index=True)
+    category: Mapped[str | None] = mapped_column(String(64), index=True)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    images: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
     # SEO
     seo_title_it: Mapped[str | None] = mapped_column(String(255))
     seo_title_en: Mapped[str | None] = mapped_column(String(255))
 
     variants: Mapped[list[ProductVariant]] = relationship(
-        back_populates="product"
+        back_populates="product", order_by="ProductVariant.price_cents"
     )
 
 
 class ProductVariant(Base, TimestampMixin):
     __tablename__ = "product_variants"
+    # Exactly one variant per tier per product (spec §4A).
+    __table_args__ = (UniqueConstraint("product_id", "tier", name="uq_variant_tier"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
-    name_it: Mapped[str] = mapped_column(String(128))
-    name_en: Mapped[str] = mapped_column(String(128))
+    # Stable public identifier the cart/checkout sends back (opaque to clients).
+    sku: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    tier: Mapped[ProductTier] = mapped_column(Enum(ProductTier))
     price_cents: Mapped[int] = mapped_column(Integer)
+    description_it: Mapped[str | None] = mapped_column(Text)
+    description_en: Mapped[str | None] = mapped_column(Text)
+    images: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    same_day: Mapped[bool] = mapped_column(Boolean, default=True)
+    exact_time: Mapped[bool] = mapped_column(Boolean, default=True)
+    stock: Mapped[int | None] = mapped_column(Integer)
 
     product: Mapped[Product] = relationship(back_populates="variants")
 
@@ -181,6 +202,8 @@ class AddOn(Base, TimestampMixin):
     __tablename__ = "addons"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Public code the cart sends (e.g. "vase").
+    code: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     name_it: Mapped[str] = mapped_column(String(128))
     name_en: Mapped[str] = mapped_column(String(128))
     price_cents: Mapped[int] = mapped_column(Integer)

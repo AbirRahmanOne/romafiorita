@@ -179,104 +179,22 @@
         }
       }
     },
-    "/products": {
-      "get": {
-        "tags": [
-          "products"
-        ],
-        "summary": "List Products",
-        "operationId": "list_products_products_get",
-        "deprecated": true,
-        "parameters": [
-          {
-            "name": "occasion",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Occasion"
-            }
-          },
-          {
-            "name": "include_inactive",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Include Inactive"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 50,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductList"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
+    "/v1/admin/products": {
       "post": {
         "tags": [
-          "products"
+          "admin-catalog"
         ],
         "summary": "Create Product",
-        "operationId": "create_product_products_post",
-        "deprecated": true,
+        "operationId": "create_product_v1_admin_products_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ProductCreate"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
@@ -302,14 +220,92 @@
         }
       }
     },
-    "/products/{slug}": {
+    "/v1/catalog/products": {
       "get": {
         "tags": [
-          "products"
+          "catalog"
+        ],
+        "summary": "List Products",
+        "operationId": "listProducts",
+        "parameters": [
+          {
+            "name": "occasion",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occasion"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "it",
+                "en"
+              ],
+              "type": "string",
+              "default": "it",
+              "title": "Locale"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/catalog/products/{slug}": {
+      "get": {
+        "tags": [
+          "catalog"
         ],
         "summary": "Get Product",
-        "operationId": "get_product_products__slug__get",
-        "deprecated": true,
+        "operationId": "getProduct",
         "parameters": [
           {
             "name": "slug",
@@ -318,6 +314,20 @@
             "schema": {
               "type": "string",
               "title": "Slug"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "it",
+                "en"
+              ],
+              "type": "string",
+              "default": "it",
+              "title": "Locale"
             }
           }
         ],
@@ -345,42 +355,90 @@
         }
       }
     },
-    "/products/id/{product_id}": {
-      "patch": {
+    "/v1/catalog/occasions": {
+      "get": {
         "tags": [
-          "products"
+          "catalog"
         ],
-        "summary": "Update Product",
-        "operationId": "update_product_products_id__product_id__patch",
-        "deprecated": true,
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Product Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProductUpdate"
-              }
-            }
-          }
-        },
+        "summary": "List Occasions",
+        "operationId": "listOccasions",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProductRead"
+                  "$ref": "#/components/schemas/OccasionListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/catalog/addons": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "List Addons",
+        "operationId": "listAddons",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/delivery/check": {
+      "get": {
+        "tags": [
+          "delivery"
+        ],
+        "summary": "Check",
+        "operationId": "checkDelivery",
+        "parameters": [
+          {
+            "name": "postcode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Postcode"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryCheckResponse"
                 }
               }
             }
@@ -396,28 +454,94 @@
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/v1/delivery/slots": {
+      "get": {
         "tags": [
-          "products"
+          "delivery"
         ],
-        "summary": "Delete Product",
-        "operationId": "delete_product_products_id__product_id__delete",
-        "deprecated": true,
+        "summary": "Slots",
+        "operationId": "deliverySlots",
         "parameters": [
           {
-            "name": "product_id",
-            "in": "path",
+            "name": "postcode",
+            "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Product Id"
+              "type": "string",
+              "title": "Postcode"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Successful Response"
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cart/quote": {
+      "post": {
+        "tags": [
+          "cart"
+        ],
+        "summary": "Quote",
+        "operationId": "quoteCart",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartQuoteResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -435,6 +559,216 @@
   },
   "components": {
     "schemas": {
+      "AddonListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AddonRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AddonListResponse"
+      },
+      "AddonRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name_it": {
+            "type": "string",
+            "title": "Name It"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En"
+          },
+          "price_cents": {
+            "type": "integer",
+            "title": "Price Cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name_it",
+          "name_en",
+          "price_cents"
+        ],
+        "title": "AddonRead"
+      },
+      "CartItem": {
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "title": "Variant Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Quantity"
+          },
+          "addons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Addons",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant_id",
+          "quantity"
+        ],
+        "title": "CartItem"
+      },
+      "CartQuoteRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CartItem"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "postcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postcode"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "delivery_type": {
+            "type": "string",
+            "title": "Delivery Type",
+            "default": "standard"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "CartQuoteRequest"
+      },
+      "CartQuoteResponse": {
+        "properties": {
+          "subtotal_cents": {
+            "type": "integer",
+            "title": "Subtotal Cents"
+          },
+          "delivery_cents": {
+            "type": "integer",
+            "title": "Delivery Cents"
+          },
+          "time_fee_cents": {
+            "type": "integer",
+            "title": "Time Fee Cents"
+          },
+          "total_cents": {
+            "type": "integer",
+            "title": "Total Cents"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "default": "EUR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subtotal_cents",
+          "delivery_cents",
+          "time_fee_cents",
+          "total_cents"
+        ],
+        "title": "CartQuoteResponse"
+      },
+      "DeliveryCheckResponse": {
+        "properties": {
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Types"
+          },
+          "fees": {
+            "$ref": "#/components/schemas/DeliveryFees"
+          },
+          "cutoff": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zone",
+          "types",
+          "fees",
+          "cutoff"
+        ],
+        "title": "DeliveryCheckResponse"
+      },
+      "DeliveryFees": {
+        "properties": {
+          "standard_cents": {
+            "type": "integer",
+            "title": "Standard Cents"
+          },
+          "window_cents": {
+            "type": "integer",
+            "title": "Window Cents"
+          },
+          "exact_cents": {
+            "type": "integer",
+            "title": "Exact Cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_cents",
+          "window_cents",
+          "exact_cents"
+        ],
+        "title": "DeliveryFees"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -469,6 +803,45 @@
         ],
         "title": "LoginRequest"
       },
+      "OccasionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OccasionRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OccasionListResponse"
+      },
+      "OccasionRead": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name_it": {
+            "type": "string",
+            "title": "Name It"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name_it",
+          "name_en"
+        ],
+        "title": "OccasionRead"
+      },
       "ProductCreate": {
         "properties": {
           "slug": {
@@ -487,7 +860,7 @@
             "minLength": 1,
             "title": "Name En"
           },
-          "description_it": {
+          "subtitle_it": {
             "anyOf": [
               {
                 "type": "string"
@@ -496,9 +869,9 @@
                 "type": "null"
               }
             ],
-            "title": "Description It"
+            "title": "Subtitle It"
           },
-          "description_en": {
+          "subtitle_en": {
             "anyOf": [
               {
                 "type": "string"
@@ -507,12 +880,7 @@
                 "type": "null"
               }
             ],
-            "title": "Description En"
-          },
-          "base_price_cents": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Base Price Cents"
+            "title": "Subtitle En"
           },
           "occasion": {
             "anyOf": [
@@ -525,10 +893,45 @@
             ],
             "title": "Occasion"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active",
             "default": true
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/VariantCreate"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Variants"
           }
         },
         "type": "object",
@@ -536,11 +939,11 @@
           "slug",
           "name_it",
           "name_en",
-          "base_price_cents"
+          "variants"
         ],
         "title": "ProductCreate"
       },
-      "ProductList": {
+      "ProductListResponse": {
         "properties": {
           "items": {
             "items": {
@@ -548,38 +951,25 @@
             },
             "type": "array",
             "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
           }
         },
         "type": "object",
         "required": [
-          "items",
-          "total"
+          "items"
         ],
-        "title": "ProductList"
+        "title": "ProductListResponse"
       },
       "ProductRead": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
           "slug": {
             "type": "string",
             "title": "Slug"
           },
-          "name_it": {
+          "name": {
             "type": "string",
-            "title": "Name It"
+            "title": "Name"
           },
-          "name_en": {
-            "type": "string",
-            "title": "Name En"
-          },
-          "description_it": {
+          "subtitle": {
             "anyOf": [
               {
                 "type": "string"
@@ -588,22 +978,7 @@
                 "type": "null"
               }
             ],
-            "title": "Description It"
-          },
-          "description_en": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description En"
-          },
-          "base_price_cents": {
-            "type": "integer",
-            "title": "Base Price Cents"
+            "title": "Subtitle"
           },
           "occasion": {
             "anyOf": [
@@ -616,110 +991,96 @@
             ],
             "title": "Occasion"
           },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/VariantRead"
+            },
+            "type": "array",
+            "title": "Variants"
           }
         },
         "type": "object",
         "required": [
-          "id",
           "slug",
-          "name_it",
-          "name_en",
-          "description_it",
-          "description_en",
-          "base_price_cents",
-          "occasion",
-          "is_active"
+          "name",
+          "variants"
         ],
         "title": "ProductRead"
       },
-      "ProductUpdate": {
+      "ProductTier": {
+        "type": "string",
+        "enum": [
+          "STANDARD",
+          "PREMIUM",
+          "LUXURY"
+        ],
+        "title": "ProductTier"
+      },
+      "SlotListResponse": {
         "properties": {
-          "name_it": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name It"
-          },
-          "name_en": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name En"
-          },
-          "description_it": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description It"
-          },
-          "description_en": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description En"
-          },
-          "base_price_cents": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Price Cents"
-          },
-          "occasion": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Occasion"
-          },
-          "is_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Active"
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotRead"
+            },
+            "type": "array",
+            "title": "Slots"
           }
         },
         "type": "object",
-        "title": "ProductUpdate"
+        "required": [
+          "slots"
+        ],
+        "title": "SlotListResponse"
+      },
+      "SlotRead": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "title": "Time"
+          },
+          "iso": {
+            "type": "string",
+            "title": "Iso"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "iso",
+          "available"
+        ],
+        "title": "SlotRead"
       },
       "StaffMe": {
         "properties": {
@@ -797,6 +1158,153 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VariantCreate": {
+        "properties": {
+          "tier": {
+            "$ref": "#/components/schemas/ProductTier"
+          },
+          "price_cents": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Price Cents"
+          },
+          "description_it": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description It"
+          },
+          "description_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description En"
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          },
+          "same_day": {
+            "type": "boolean",
+            "title": "Same Day",
+            "default": true
+          },
+          "exact_time": {
+            "type": "boolean",
+            "title": "Exact Time",
+            "default": true
+          },
+          "stock": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tier",
+          "price_cents"
+        ],
+        "title": "VariantCreate"
+      },
+      "VariantRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/ProductTier"
+          },
+          "price_cents": {
+            "type": "integer",
+            "title": "Price Cents"
+          },
+          "description_it": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description It"
+          },
+          "description_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description En"
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
+          },
+          "same_day": {
+            "type": "boolean",
+            "title": "Same Day"
+          },
+          "exact_time": {
+            "type": "boolean",
+            "title": "Exact Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tier",
+          "price_cents",
+          "active",
+          "is_default",
+          "same_day",
+          "exact_time"
+        ],
+        "title": "VariantRead"
       }
     }
   }

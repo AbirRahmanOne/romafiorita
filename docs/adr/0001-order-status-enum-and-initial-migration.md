@@ -31,6 +31,9 @@ enum types (no-op on SQLite) so it fully reverses.
 
 - Clean, single source-of-truth schema; CI verifies `upgrade→downgrade→upgrade` on
   real Postgres.
-- **This is a one-time exception** justified only by "no deployment exists." Once the
-  schema is deployed anywhere, the normal two-step rule applies and migrations are
-  append-only.
+- **Pre-deployment squash policy:** while nothing is deployed, the initial migration is
+  the single source of truth and may be regenerated when the model changes materially
+  (e.g. Phase 4 re-tiered the catalog — `producttier`, variant `sku`/tier fields). This
+  is standard "squash before first release" practice. **Append-only, two-step migrations
+  with explicit approval begin at the first deployment.** Each such regeneration is noted
+  in the relevant phase commit.

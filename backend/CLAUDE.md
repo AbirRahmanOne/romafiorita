@@ -17,10 +17,11 @@ app/db.py          lazy async engine + get_session + dispose_engine (lifespan)
 app/models.py      SQLAlchemy models (14 tables)
 app/schemas.py     Pydantic read models
 app/core/          security (auth), logging (structured JSON + request_id)
+app/domain/        pure business logic (delivery engine, pricing) — no FastAPI/DB
 app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
-app/api/v1/        versioned router tree: admin/ (auth), public/ (catalog), webhooks/ (later)
+app/api/v1/        router tree: admin/ (auth, catalog), public/ (catalog, delivery, cart)
 app/deps.py        auth deps: current_staff, require_roles, csrf_protect
-app/repositories/  DB access (products)
+app/repositories/  DB access (catalog)
 alembic/           async migrations (initial schema committed under versions/)
 scripts/export_openapi.py   dump openapi.json (TS client source)
 openapi.json       committed contract snapshot (test_openapi_snapshot guards drift)
@@ -32,13 +33,16 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
 ## API
 
 - `GET /healthz` (liveness) · `GET /readyz` (DB check) · `GET /health` (deprecated alias)
-- `GET /products…` is **deprecated** — superseded by `/v1/catalog/*` (tiered) in Phase 4;
-  kept working until the frontend migrates.
-- `GET /products/{slug}` → product or 404
-- Catalog writes (`POST/PATCH/DELETE /products…`) require OWNER/MANAGER + CSRF header.
+- Catalog (public, `?locale=it|en`): `GET /v1/catalog/products` (filter `occasion`,
+  `category`) · `/products/{slug}` · `/occasions` · `/addons`. Tiered variants
+  (STANDARD/PREMIUM/LUXURY); variant `id` is the opaque `sku`.
+- Delivery: `GET /v1/delivery/check?postcode=&date=` · `/v1/delivery/slots` — zones by CAP
+  (Rome 00118–00199), 15-min slots 07:00–23:45 Europe/Rome, fees window 500 / exact 900.
+- Cart: `POST /v1/cart/quote` — server-side totals from IDs only; never trust client prices.
+- Admin catalog: `POST /v1/admin/products` (create tiered product) — OWNER/MANAGER + CSRF.
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
   argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
-  lockout. See `app/routers/auth.py`, `app/deps.py`, `app/core/security.py`.
+  lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.
 - Errors use `{"error": {code, message, details, request_id}}` (handlers in `main.py`;
   covers HTTPException, 422 validation, and a generic 500). `X-Request-ID` on every
   response; security headers + request-size limit via middleware.

@@ -1,44 +1,91 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
-from app.deps import csrf_protect, require_roles
-from app.models import StaffRole
-from app.repositories import products as repo
-from app.schemas import ProductCreate, ProductList, ProductRead, ProductUpdate
+from app.models import Product, ProductVariant
+from app.repositories import catalog as repo
+from app.schemas import (
+    AddonListResponse,
+    AddonRead,
+    OccasionListResponse,
+    OccasionRead,
+    ProductListResponse,
+    ProductRead,
+    VariantRead,
+)
 
-# Deprecated: superseded by /v1/catalog/products (tiered shape) in Phase 4.
-# Kept working until the frontend migrates; sunset once it has.
-router = APIRouter(prefix="/products", tags=["products"], deprecated=True)
+router = APIRouter(prefix="/v1/catalog", tags=["catalog"])
 
-# Catalog writes are OWNER/MANAGER only and CSRF-protected (cookie auth).
-_can_write = Depends(require_roles(StaffRole.OWNER, StaffRole.MANAGER))
-_csrf = Depends(csrf_protect)
+Locale = Literal["it", "en"]
+
+# Static occasion list (slug + localised names). Moves to content settings later.
+OCCASIONS: list[OccasionRead] = [
+    OccasionRead(
+        slug="love", name_it="Amore e anniversario", name_en="Love & anniversary"
+    ),
+    OccasionRead(slug="birthday", name_it="Compleanno", name_en="Birthday"),
+    OccasionRead(slug="thanks", name_it="Grazie", name_en="Thank you"),
+    OccasionRead(slug="sympathy", name_it="Cordoglio", name_en="Sympathy"),
+    OccasionRead(slug="baby", name_it="Nuovo arrivo", name_en="New baby"),
+    OccasionRead(slug="getwell", name_it="Pronta guarigione", name_en="Get well"),
+]
 
 
-@router.get("", response_model=ProductList)
+def _loc(it: str | None, en: str | None, locale: str) -> str:
+    primary, fallback = (it, en) if locale == "it" else (en, it)
+    return primary or fallback or ""
+
+
+def serialize_variant(v: ProductVariant) -> VariantRead:
+    return VariantRead(
+        id=v.sku,
+        tier=v.tier,
+        price_cents=v.price_cents,
+        description_it=v.description_it,
+        description_en=v.description_en,
+        images=v.images or [],
+        active=v.is_active,
+        is_default=v.is_default,
+        same_day=v.same_day,
+        exact_time=v.exact_time,
+    )
+
+
+def serialize_product(p: Product, locale: str) -> ProductRead:
+    return ProductRead(
+        slug=p.slug,
+        name=_loc(p.name_it, p.name_en, locale),
+        subtitle=_loc(p.subtitle_it, p.subtitle_en, locale) or None,
+        occasion=p.occasion,
+        category=p.category,
+        tags=p.tags or [],
+        images=p.images or [],
+        variants=[serialize_variant(v) for v in p.variants if v.is_active],
+    )
+
+
+@router.get(
+    "/products", response_model=ProductListResponse, operation_id="listProducts"
+)
 async def list_products(
     occasion: str | None = Query(default=None),
-    include_inactive: bool = Query(default=False),
-    limit: int = Query(default=50, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    category: str | None = Query(default=None),
+    locale: Locale = Query(default="it"),
     session: AsyncSession = Depends(get_session),
-) -> ProductList:
-    items, total = await repo.list_products(
-        session,
-        occasion=occasion,
-        include_inactive=include_inactive,
-        limit=limit,
-        offset=offset,
-    )
-    return ProductList(
-        items=[ProductRead.model_validate(p) for p in items], total=total
-    )
+) -> ProductListResponse:
+    products = await repo.list_products(session, occasion=occasion, category=category)
+    return ProductListResponse(items=[serialize_product(p, locale) for p in products])
 
 
-@router.get("/{slug}", response_model=ProductRead)
+@router.get(
+    "/products/{slug}", response_model=ProductRead, operation_id="getProduct"
+)
 async def get_product(
-    slug: str, session: AsyncSession = Depends(get_session)
+    slug: str,
+    locale: Locale = Query(default="it"),
+    session: AsyncSession = Depends(get_session),
 ) -> ProductRead:
     product = await repo.get_product_by_slug(session, slug)
     if product is None:
@@ -46,56 +93,29 @@ async def get_product(
             status_code=404,
             detail={"code": "product_not_found", "message": "Product not found."},
         )
-    return ProductRead.model_validate(product)
+    return serialize_product(product, locale)
 
 
-@router.post(
-    "", response_model=ProductRead, status_code=201, dependencies=[_can_write, _csrf]
+@router.get(
+    "/occasions", response_model=OccasionListResponse, operation_id="listOccasions"
 )
-async def create_product(
-    data: ProductCreate, session: AsyncSession = Depends(get_session)
-) -> ProductRead:
-    if await repo.slug_exists(session, data.slug):
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "code": "slug_taken",
-                "message": "A product with this slug already exists.",
-            },
-        )
-    product = await repo.create_product(session, data)
-    return ProductRead.model_validate(product)
+async def list_occasions() -> OccasionListResponse:
+    return OccasionListResponse(items=OCCASIONS)
 
 
-@router.patch(
-    "/id/{product_id}", response_model=ProductRead, dependencies=[_can_write, _csrf]
-)
-async def update_product(
-    product_id: int,
-    data: ProductUpdate,
+@router.get("/addons", response_model=AddonListResponse, operation_id="listAddons")
+async def list_addons(
     session: AsyncSession = Depends(get_session),
-) -> ProductRead:
-    product = await repo.get_product_by_id(session, product_id)
-    if product is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"code": "product_not_found", "message": "Product not found."},
-        )
-    product = await repo.update_product(session, product, data)
-    return ProductRead.model_validate(product)
-
-
-@router.delete(
-    "/id/{product_id}", status_code=204, dependencies=[_can_write, _csrf]
-)
-async def delete_product(
-    product_id: int, session: AsyncSession = Depends(get_session)
-) -> Response:
-    product = await repo.get_product_by_id(session, product_id)
-    if product is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"code": "product_not_found", "message": "Product not found."},
-        )
-    await repo.delete_product(session, product)
-    return Response(status_code=204)
+) -> AddonListResponse:
+    addons = await repo.list_addons(session)
+    return AddonListResponse(
+        items=[
+            AddonRead(
+                id=a.code,
+                name_it=a.name_it,
+                name_en=a.name_en,
+                price_cents=a.price_cents,
+            )
+            for a in addons
+        ]
+    )

@@ -2,7 +2,7 @@ from httpx import AsyncClient
 
 
 async def test_404_envelope_has_request_id(client: AsyncClient) -> None:
-    resp = await client.get("/products/does-not-exist")
+    resp = await client.get("/v1/catalog/products/does-not-exist")
     assert resp.status_code == 404
     err = resp.json()["error"]
     assert err["code"] == "product_not_found"

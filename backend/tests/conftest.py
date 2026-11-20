@@ -13,12 +13,40 @@ from sqlalchemy.pool import NullPool, StaticPool
 from app.core.security import hash_password
 from app.db import get_session
 from app.main import app
-from app.models import Base, Product, Staff, StaffRole
+from app.models import (
+    AddOn,
+    Base,
+    Product,
+    ProductTier,
+    ProductVariant,
+    Staff,
+    StaffRole,
+)
 
 OWNER_EMAIL = "owner@romafiorita.com"
 FLORIST_EMAIL = "florist@romafiorita.com"
 PASSWORD = "correct-horse-battery-staple"
 LOGIN_URL = "/v1/admin/auth/login"
+
+
+def _tiers(slug: str, premium_cents: int) -> list[ProductVariant]:
+    """Three ascending tiers; PREMIUM is the default."""
+    spec = [
+        (ProductTier.STANDARD, round(premium_cents * 0.8), False),
+        (ProductTier.PREMIUM, premium_cents, True),
+        (ProductTier.LUXURY, round(premium_cents * 1.4), False),
+    ]
+    return [
+        ProductVariant(
+            sku=f"{slug}-{tier.value.lower()}",
+            tier=tier,
+            price_cents=cents,
+            description_en=f"{tier.value} bouquet",
+            description_it=f"Mazzo {tier.value}",
+            is_default=is_default,
+        )
+        for tier, cents, is_default in spec
+    ]
 
 # Default to in-memory SQLite so local runs need no DB. CI sets
 # TEST_DATABASE_URL to a real Postgres 16 to catch Postgres-only behaviour
@@ -53,23 +81,29 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
                     slug="rose-di-roma",
                     name_it="Rose di Roma",
                     name_en="Roses of Rome",
-                    base_price_cents=4900,
                     occasion="love",
+                    category="Roses",
+                    variants=_tiers("rose-di-roma", 4900),
                 ),
                 Product(
                     slug="primavera-romana",
                     name_it="Primavera Romana",
                     name_en="Roman Spring",
-                    base_price_cents=3900,
                     occasion="birthday",
+                    category="Seasonal",
+                    variants=_tiers("primavera-romana", 3900),
                 ),
                 Product(
                     slug="nascosto",
                     name_it="Nascosto",
                     name_en="Hidden",
-                    base_price_cents=1000,
                     occasion="love",
                     is_active=False,
+                    variants=_tiers("nascosto", 1000),
+                ),
+                AddOn(code="card", name_it="Biglietto", name_en="Card", price_cents=0),
+                AddOn(
+                    code="vase", name_it="Vaso", name_en="Vase", price_cents=1800
                 ),
                 Staff(
                     email=OWNER_EMAIL,
