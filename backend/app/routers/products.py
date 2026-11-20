@@ -2,13 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.deps import csrf_protect, require_roles
+from app.models import StaffRole
 from app.repositories import products as repo
 from app.schemas import ProductCreate, ProductList, ProductRead, ProductUpdate
 
 router = APIRouter(prefix="/products", tags=["products"])
 
-# ponytail: admin write routes are open for now; gate behind OWNER/MANAGER auth
-# when the auth layer lands (see backend-api-conventions).
+# Catalog writes are OWNER/MANAGER only and CSRF-protected (cookie auth).
+_can_write = Depends(require_roles(StaffRole.OWNER, StaffRole.MANAGER))
+_csrf = Depends(csrf_protect)
 
 
 @router.get("", response_model=ProductList)
@@ -44,7 +47,9 @@ async def get_product(
     return ProductRead.model_validate(product)
 
 
-@router.post("", response_model=ProductRead, status_code=201)
+@router.post(
+    "", response_model=ProductRead, status_code=201, dependencies=[_can_write, _csrf]
+)
 async def create_product(
     data: ProductCreate, session: AsyncSession = Depends(get_session)
 ) -> ProductRead:
@@ -60,7 +65,9 @@ async def create_product(
     return ProductRead.model_validate(product)
 
 
-@router.patch("/id/{product_id}", response_model=ProductRead)
+@router.patch(
+    "/id/{product_id}", response_model=ProductRead, dependencies=[_can_write, _csrf]
+)
 async def update_product(
     product_id: int,
     data: ProductUpdate,
@@ -76,7 +83,9 @@ async def update_product(
     return ProductRead.model_validate(product)
 
 
-@router.delete("/id/{product_id}", status_code=204)
+@router.delete(
+    "/id/{product_id}", status_code=204, dependencies=[_can_write, _csrf]
+)
 async def delete_product(
     product_id: int, session: AsyncSession = Depends(get_session)
 ) -> Response:

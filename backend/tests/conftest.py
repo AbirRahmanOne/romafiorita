@@ -10,9 +10,15 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool, StaticPool
 
+from app.core.security import hash_password
 from app.db import get_session
 from app.main import app
-from app.models import Base, Product
+from app.models import Base, Product, Staff, StaffRole
+
+OWNER_EMAIL = "owner@romafiorita.com"
+FLORIST_EMAIL = "florist@romafiorita.com"
+PASSWORD = "correct-horse-battery-staple"
+LOGIN_URL = "/v1/admin/auth/login"
 
 # Default to in-memory SQLite so local runs need no DB. CI sets
 # TEST_DATABASE_URL to a real Postgres 16 to catch Postgres-only behaviour
@@ -65,6 +71,18 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
                     occasion="love",
                     is_active=False,
                 ),
+                Staff(
+                    email=OWNER_EMAIL,
+                    hashed_password=hash_password(PASSWORD),
+                    name="Owner",
+                    role=StaffRole.OWNER,
+                ),
+                Staff(
+                    email=FLORIST_EMAIL,
+                    hashed_password=hash_password(PASSWORD),
+                    name="Florist",
+                    role=StaffRole.FLORIST,
+                ),
             ]
         )
         await session.commit()
@@ -83,3 +101,20 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
+
+
+async def _login(client: AsyncClient, email: str) -> dict[str, str]:
+    """Log in; return the CSRF header to use on subsequent mutations."""
+    resp = await client.post(LOGIN_URL, json={"email": email, "password": PASSWORD})
+    assert resp.status_code == 200, resp.text
+    return {"X-CSRF-Token": client.cookies["rf_csrf"]}
+
+
+@pytest_asyncio.fixture
+async def owner(client: AsyncClient) -> tuple[AsyncClient, dict[str, str]]:
+    return client, await _login(client, OWNER_EMAIL)
+
+
+@pytest_asyncio.fixture
+async def florist(client: AsyncClient) -> tuple[AsyncClient, dict[str, str]]:
+    return client, await _login(client, FLORIST_EMAIL)

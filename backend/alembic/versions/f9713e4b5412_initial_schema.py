@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: b7e58d5bdf12
+Revision ID: f9713e4b5412
 Revises: 
-Create Date: 2026-11-20 16:48:59.249698
+Create Date: 2026-11-20 18:48:58.931697
 
 """
 from collections.abc import Sequence
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b7e58d5bdf12'
+revision: str = 'f9713e4b5412'
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -76,6 +76,9 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('role', sa.Enum('OWNER', 'MANAGER', 'FLORIST', 'RIDER', name='staffrole'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('refresh_jti', sa.String(length=64), nullable=True),
+    sa.Column('failed_login_count', sa.Integer(), server_default='0', nullable=False),
+    sa.Column('locked_until', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -143,7 +146,7 @@ def upgrade() -> None:
     op.create_table('orders',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('number', sa.String(length=20), nullable=False),
-    sa.Column('status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'PREPARING', 'PHOTO_SENT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PROBLEM', name='orderstatus'), nullable=False),
+    sa.Column('status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'AWAITING_PHOTO', 'PHOTO_SENT', 'APPROVED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'PROBLEM', 'PAYMENT_REQUESTED', 'EXPIRED', name='orderstatus'), nullable=False),
     sa.Column('customer_id', sa.Integer(), nullable=True),
     sa.Column('recipient_id', sa.Integer(), nullable=True),
     sa.Column('delivery_type', sa.Enum('ROME_SAME_DAY', 'ROME_WINDOW', 'ROME_EXACT', 'NATIONAL_COURIER', name='deliverytype'), nullable=False),
@@ -168,8 +171,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('order_id', sa.Integer(), nullable=False),
     sa.Column('actor', sa.String(length=64), nullable=False),
-    sa.Column('from_status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'PREPARING', 'PHOTO_SENT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PROBLEM', name='orderstatus'), nullable=True),
-    sa.Column('to_status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'PREPARING', 'PHOTO_SENT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PROBLEM', name='orderstatus'), nullable=True),
+    sa.Column('from_status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'AWAITING_PHOTO', 'PHOTO_SENT', 'APPROVED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'PROBLEM', 'PAYMENT_REQUESTED', 'EXPIRED', name='orderstatus'), nullable=True),
+    sa.Column('to_status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'AWAITING_PHOTO', 'PHOTO_SENT', 'APPROVED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'PROBLEM', 'PAYMENT_REQUESTED', 'EXPIRED', name='orderstatus'), nullable=True),
     sa.Column('note', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),

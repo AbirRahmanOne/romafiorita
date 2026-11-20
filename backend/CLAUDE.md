@@ -31,9 +31,21 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
 - `GET /health` → `{"status":"ok"}`
 - `GET /products?occasion=&limit=&offset=` → `{items, total}` (active only)
 - `GET /products/{slug}` → product or 404
-- Errors use `{"error": {code, message, details}}` (see the handler in `main.py`).
+- Catalog writes (`POST/PATCH/DELETE /products…`) require OWNER/MANAGER + CSRF header.
+- `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
+  argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
+  lockout. See `app/routers/auth.py`, `app/deps.py`, `app/core/security.py`.
+- Errors use `{"error": {code, message, details, request_id}}` (handlers in `main.py`;
+  covers HTTPException, 422 validation, and a generic 500). `X-Request-ID` on every
+  response; security headers + request-size limit via middleware.
 - Export schema: `python -m scripts.export_openapi` → `openapi.json` (commit the diff;
   `test_openapi_snapshot` fails on unintended drift).
+
+## Auth deps (use these on admin routes)
+
+- `Depends(get_current_staff)` — require a logged-in staff member.
+- `Depends(require_roles(StaffRole.OWNER, ...))` — role guard (403 otherwise).
+- `Depends(csrf_protect)` — double-submit CSRF check on cookie-authenticated mutations.
 
 ## Rules
 

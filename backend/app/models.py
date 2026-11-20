@@ -57,17 +57,23 @@ class StaffRole(enum.StrEnum):
 
 
 class OrderStatus(enum.StrEnum):
+    # Happy path (spec §4D).
     PENDING_PAYMENT = "PENDING_PAYMENT"
     NEW = "NEW"
     ACCEPTED = "ACCEPTED"
-    PREPARING = "PREPARING"
+    AWAITING_PHOTO = "AWAITING_PHOTO"
     PHOTO_SENT = "PHOTO_SENT"
+    APPROVED = "APPROVED"
     OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY"
     DELIVERED = "DELIVERED"
+    # Side states.
     DECLINED = "DECLINED"
     CANCELLED = "CANCELLED"
     REFUNDED = "REFUNDED"
+    PARTIALLY_REFUNDED = "PARTIALLY_REFUNDED"
     PROBLEM = "PROBLEM"
+    PAYMENT_REQUESTED = "PAYMENT_REQUESTED"
+    EXPIRED = "EXPIRED"
 
 
 class DeliveryType(enum.StrEnum):
@@ -96,6 +102,13 @@ class Staff(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255))
     role: Mapped[StaffRole] = mapped_column(Enum(StaffRole))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Auth: rotating-refresh reuse detection + login lockout.
+    refresh_jti: Mapped[str | None] = mapped_column(String(64))
+    failed_login_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0"
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Customer(Base, TimestampMixin):
