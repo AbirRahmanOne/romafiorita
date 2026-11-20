@@ -14,12 +14,12 @@ Read before working here: **`backend-api-conventions`**. Domain rules:
 app/main.py        create_app() factory + lifespan, middleware, error handlers
 app/config.py      pydantic-settings (.env)
 app/db.py          lazy async engine + get_session + dispose_engine (lifespan)
-app/models.py      SQLAlchemy models (15 tables)
+app/models.py      SQLAlchemy models (16 tables)
 app/schemas.py     Pydantic read models
 app/core/          security (auth), logging, ids (order number + tokens)
 app/domain/        pure logic: delivery engine, pricing, order state machine — no FastAPI/DB
 app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
-app/services/      use cases: checkout (validate→price→book slot→order→authorise)
+app/services/      use cases: checkout, payment_requests, pdf (branded, fpdf2+segno)
 app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
 app/api/v1/        router tree: admin/ (auth, catalog, orders), public/ (catalog,
                    delivery, cart, checkout, orders)
@@ -50,6 +50,12 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
   `/{id}/photo` · `/{id}/refund`. State machine in `app/domain/orders.py` enforces
   source state + per-action roles + guards; each move writes an OrderEvent.
 - Admin catalog: `POST /v1/admin/products` (create tiered product) — OWNER/MANAGER + CSRF.
+- Payment requests (custom orders, OWNER/MANAGER + CSRF): `POST/GET /v1/admin/payment-requests`
+  · PATCH/`/cancel`/`/resend`/`/duplicate`/`GET /{id}/pdf`. Server computes total, creates an
+  order in PAYMENT_REQUESTED; only the token hash is stored (raw token returned on
+  create/resend/duplicate/edit; PDF reissues a fresh link). Public: `GET /v1/pay/{token}`
+  (noindex, records view) · `POST /v1/pay/{token}/intent` (auto-capture → order ACCEPTED) ·
+  `POST /v1/verify` (order#+email, no enumeration).
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
   argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
   lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.

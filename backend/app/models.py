@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import enum
 from datetime import UTC, date, datetime, time
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -89,6 +90,14 @@ class DeliveryType(enum.StrEnum):
     ROME_WINDOW = "ROME_WINDOW"
     ROME_EXACT = "ROME_EXACT"
     NATIONAL_COURIER = "NATIONAL_COURIER"
+
+
+class PaymentRequestStatus(enum.StrEnum):
+    SENT = "SENT"
+    VIEWED = "VIEWED"
+    PAID = "PAID"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
 
 
 class PaymentStatus(enum.StrEnum):
@@ -368,6 +377,39 @@ class Payment(Base, TimestampMixin):
     status: Mapped[PaymentStatus] = mapped_column(
         Enum(PaymentStatus), default=PaymentStatus.PENDING
     )
+
+
+class PaymentRequest(Base, TimestampMixin):
+    """Custom-order payment request (spec §F). Captured immediately on payment.
+
+    Only the token hash is stored; the raw token is shown to the admin at
+    create/resend/edit time and goes to the buyer via WhatsApp/email."""
+
+    __tablename__ = "payment_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    status: Mapped[PaymentRequestStatus] = mapped_column(
+        Enum(PaymentRequestStatus), default=PaymentRequestStatus.SENT, index=True
+    )
+    customer: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    whatsapp: Mapped[str | None] = mapped_column(String(32))
+    recipient: Mapped[str | None] = mapped_column(String(512))
+    delivery_slot: Mapped[str | None] = mapped_column(String(128))
+    card_message: Mapped[str | None] = mapped_column(Text)
+    # [{title, price_cents}]
+    items: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    discount_cents: Mapped[int] = mapped_column(Integer, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="EUR")
+    hide_sender: Mapped[bool] = mapped_column(Boolean, default=False)
+    locale: Mapped[str] = mapped_column(String(2), default="it")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    order: Mapped[Order] = relationship()
 
 
 class StripeEvent(Base):

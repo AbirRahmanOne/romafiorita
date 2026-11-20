@@ -270,3 +270,100 @@ class PhotoBody(BaseModel):
 class RefundBody(BaseModel):
     amount_cents: int | None = Field(default=None, ge=1)
     reason: str | None = Field(default=None, max_length=255)
+
+
+# --- Payment requests (custom orders) ------------------------------------
+
+
+class CustomItem(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    price_cents: int = Field(ge=0)
+
+
+class PaymentRequestCreate(BaseModel):
+    customer: str = Field(min_length=1, max_length=255)
+    email: EmailStr
+    whatsapp: str | None = Field(default=None, max_length=32)
+    recipient: str | None = Field(default=None, max_length=512)
+    delivery_slot: str | None = Field(default=None, max_length=128)
+    card_message: str | None = Field(default=None, max_length=300)
+    items: list[CustomItem] = Field(min_length=1)
+    expiry_hours: int = Field(default=48, ge=1, le=720)
+    discount_cents: int = Field(default=0, ge=0)
+    hide_sender: bool = False
+    locale: str = Field(default="it", pattern="^(it|en)$")
+
+
+class PaymentRequestUpdate(BaseModel):
+    customer: str | None = Field(default=None, min_length=1, max_length=255)
+    email: EmailStr | None = None
+    whatsapp: str | None = Field(default=None, max_length=32)
+    recipient: str | None = Field(default=None, max_length=512)
+    delivery_slot: str | None = Field(default=None, max_length=128)
+    card_message: str | None = Field(default=None, max_length=300)
+    items: list[CustomItem] | None = Field(default=None, min_length=1)
+    discount_cents: int | None = Field(default=None, ge=0)
+    hide_sender: bool | None = None
+
+
+class PaymentRequestRead(BaseModel):
+    id: int
+    order_number: str
+    customer: str
+    email: str
+    whatsapp: str | None
+    amount_cents: int
+    currency: str
+    status: str
+    # Raw token: present only on create/resend/duplicate/edit; None in lists.
+    token: str | None = None
+    expires_at: datetime.datetime
+    last_viewed_at: datetime.datetime | None
+    items: list[CustomItem]
+    recipient: str | None
+    delivery_slot: str | None
+    card_message: str | None
+    discount_cents: int
+    hide_sender: bool
+
+
+class PaymentRequestListResponse(BaseModel):
+    items: list[PaymentRequestRead]
+
+
+# --- Public pay / verify -------------------------------------------------
+
+
+class LocalEstimate(BaseModel):
+    currency: str
+    amount_cents: int
+
+
+class PaySummary(BaseModel):
+    order_number: str
+    items: list[CustomItem]
+    recipient: str | None
+    delivery_slot: str | None
+    card_message: str | None
+    amount_cents: int
+    currency: str
+    local_estimate: LocalEstimate | None = None
+    status: str
+    expires_at: datetime.datetime
+
+
+class PayIntentResponse(BaseModel):
+    client_secret: str
+    order_number: str
+
+
+class VerifyRequest(BaseModel):
+    order_number: str = Field(min_length=1, max_length=20)
+    email: EmailStr
+
+
+class VerifyResponse(BaseModel):
+    genuine: bool
+    order_number: str | None = None
+    amount_cents: int | None = None
+    status: str | None = None
