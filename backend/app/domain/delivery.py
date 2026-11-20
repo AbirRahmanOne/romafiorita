@@ -27,6 +27,8 @@ EXACT_FEE_CENTS = 900  # placeholder €[Y]
 SLOT_STEP = timedelta(minutes=15)
 SLOT_OPEN = time(7, 0)
 SLOT_CLOSE = time(23, 45)
+SLOT_CAPACITY = 3  # placeholder: seats per 15-min slot (riders available)
+RESERVATION_HOLD = timedelta(minutes=15)  # placeholder: unpaid hold lifetime
 
 _CAP_RE = re.compile(r"^\d{5}$")
 

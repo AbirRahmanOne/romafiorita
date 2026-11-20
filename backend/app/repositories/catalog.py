@@ -73,6 +73,26 @@ async def variant_prices_by_sku(
     return {sku: price for sku, price in rows.all()}
 
 
+async def active_variants_by_sku(
+    session: AsyncSession, skus: Sequence[str]
+) -> dict[str, ProductVariant]:
+    """Buyable variants (variant + product active) keyed by sku, product loaded
+    for order-item snapshots."""
+    if not skus:
+        return {}
+    rows = await session.scalars(
+        select(ProductVariant)
+        .join(Product, ProductVariant.product_id == Product.id)
+        .where(
+            ProductVariant.sku.in_(skus),
+            ProductVariant.is_active.is_(True),
+            Product.is_active.is_(True),
+        )
+        .options(selectinload(ProductVariant.product))
+    )
+    return {v.sku: v for v in rows.all()}
+
+
 async def addon_prices_by_code(
     session: AsyncSession, codes: Sequence[str]
 ) -> dict[str, int]:

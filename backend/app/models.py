@@ -93,9 +93,12 @@ class DeliveryType(enum.StrEnum):
 
 class PaymentStatus(enum.StrEnum):
     PENDING = "PENDING"
-    SUCCEEDED = "SUCCEEDED"
+    AUTHORIZED = "AUTHORIZED"  # hold placed (manual capture)
+    CAPTURED = "CAPTURED"
     FAILED = "FAILED"
+    CANCELLED = "CANCELLED"  # hold released
     REFUNDED = "REFUNDED"
+    PARTIALLY_REFUNDED = "PARTIALLY_REFUNDED"
 
 
 # --- Staff & customers ---------------------------------------------------
@@ -126,6 +129,8 @@ class Customer(Base, TimestampMixin):
     # Nullable email supports guest checkout.
     email: Mapped[str | None] = mapped_column(String(255), index=True)
     name: Mapped[str | None] = mapped_column(String(255))
+    phone: Mapped[str | None] = mapped_column(String(32))  # E.164
+    country: Mapped[str | None] = mapped_column(String(2))  # ISO-3166 alpha-2
     locale: Mapped[str] = mapped_column(String(2), default="it")
 
     recipients: Mapped[list[Recipient]] = relationship(back_populates="customer")
@@ -238,6 +243,23 @@ class TimeSlotRule(Base, TimestampMixin):
     exact_fee_cents: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class SlotCapacity(Base, TimestampMixin):
+    """One counter row per (date, slot). ``held_count`` is bumped atomically at
+    booking via UPDATE … WHERE held_count < capacity, so concurrent checkouts
+    can never overbook (see repositories/slots.py)."""
+
+    __tablename__ = "slot_capacity"
+    __table_args__ = (
+        UniqueConstraint("slot_date", "slot_start", name="uq_slot"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slot_date: Mapped[date] = mapped_column(Date, index=True)
+    slot_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    capacity: Mapped[int] = mapped_column(Integer)
+    held_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
 # --- Orders --------------------------------------------------------------
 
 
@@ -245,7 +267,11 @@ class Order(Base, TimestampMixin):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
+    # Nullable only transiently: assigned from the id right after flush, before
+    # commit (RF-YYYY-NNNNN needs the id). Never persisted null.
+    number: Mapped[str] = mapped_column(
+        String(20), unique=True, index=True, nullable=True
+    )
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus), default=OrderStatus.PENDING_PAYMENT, index=True
     )
@@ -259,15 +285,26 @@ class Order(Base, TimestampMixin):
 
     subtotal_cents: Mapped[int] = mapped_column(Integer, default=0)
     delivery_fee_cents: Mapped[int] = mapped_column(Integer, default=0)
+    time_fee_cents: Mapped[int] = mapped_column(Integer, default=0)
     total_cents: Mapped[int] = mapped_column(Integer, default=0)
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
 
     card_message: Mapped[str | None] = mapped_column(Text)
     hide_sender: Mapped[bool] = mapped_column(Boolean, default=False)
+    bouquet_photo: Mapped[str | None] = mapped_column(String(512))
+    assigned_rider_id: Mapped[int | None] = mapped_column(ForeignKey("staff.id"))
+
+    # Public tracking: store only the hash; the raw token goes to the buyer.
+    track_token_hash: Mapped[str | None] = mapped_column(
+        String(64), unique=True, index=True
+    )
 
     customer: Mapped[Customer | None] = relationship(back_populates="orders")
+    recipient: Mapped[Recipient | None] = relationship()
     items: Mapped[list[OrderItem]] = relationship(back_populates="order")
-    events: Mapped[list[OrderEvent]] = relationship(back_populates="order")
+    events: Mapped[list[OrderEvent]] = relationship(
+        back_populates="order", order_by="OrderEvent.id"
+    )
 
 
 class OrderItem(Base):
@@ -280,6 +317,7 @@ class OrderItem(Base):
         ForeignKey("product_variants.id")
     )
     name_snapshot: Mapped[str] = mapped_column(String(255))
+    tier_snapshot: Mapped[str | None] = mapped_column(String(16))
     quantity: Mapped[int] = mapped_column(Integer, default=1)
     unit_price_cents: Mapped[int] = mapped_column(Integer)
 

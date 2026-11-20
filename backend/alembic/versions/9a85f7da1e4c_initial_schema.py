@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: c6c6374785ca
+Revision ID: 9a85f7da1e4c
 Revises: 
-Create Date: 2026-11-20 22:58:25.952337
+Create Date: 2026-11-21 02:09:39.340235
 
 """
 from collections.abc import Sequence
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c6c6374785ca'
+revision: str = '9a85f7da1e4c'
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -36,6 +36,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('name', sa.String(length=255), nullable=True),
+    sa.Column('phone', sa.String(length=32), nullable=True),
+    sa.Column('country', sa.String(length=2), nullable=True),
     sa.Column('locale', sa.String(length=2), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
@@ -75,6 +77,18 @@ def upgrade() -> None:
     op.create_index(op.f('ix_products_category'), 'products', ['category'], unique=False)
     op.create_index(op.f('ix_products_occasion'), 'products', ['occasion'], unique=False)
     op.create_index(op.f('ix_products_slug'), 'products', ['slug'], unique=True)
+    op.create_table('slot_capacity',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('slot_date', sa.Date(), nullable=False),
+    sa.Column('slot_start', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('capacity', sa.Integer(), nullable=False),
+    sa.Column('held_count', sa.Integer(), server_default='0', nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('slot_date', 'slot_start', name='uq_slot')
+    )
+    op.create_index(op.f('ix_slot_capacity_slot_date'), 'slot_capacity', ['slot_date'], unique=False)
     op.create_table('staff',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
@@ -160,7 +174,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_reminders_remind_on'), 'reminders', ['remind_on'], unique=False)
     op.create_table('orders',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('number', sa.String(length=20), nullable=False),
+    sa.Column('number', sa.String(length=20), nullable=True),
     sa.Column('status', sa.Enum('PENDING_PAYMENT', 'NEW', 'ACCEPTED', 'AWAITING_PHOTO', 'PHOTO_SENT', 'APPROVED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DECLINED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'PROBLEM', 'PAYMENT_REQUESTED', 'EXPIRED', name='orderstatus'), nullable=False),
     sa.Column('customer_id', sa.Integer(), nullable=True),
     sa.Column('recipient_id', sa.Integer(), nullable=True),
@@ -170,18 +184,24 @@ def upgrade() -> None:
     sa.Column('slot_end', sa.DateTime(timezone=True), nullable=True),
     sa.Column('subtotal_cents', sa.Integer(), nullable=False),
     sa.Column('delivery_fee_cents', sa.Integer(), nullable=False),
+    sa.Column('time_fee_cents', sa.Integer(), nullable=False),
     sa.Column('total_cents', sa.Integer(), nullable=False),
     sa.Column('currency', sa.String(length=3), nullable=False),
     sa.Column('card_message', sa.Text(), nullable=True),
     sa.Column('hide_sender', sa.Boolean(), nullable=False),
+    sa.Column('bouquet_photo', sa.String(length=512), nullable=True),
+    sa.Column('assigned_rider_id', sa.Integer(), nullable=True),
+    sa.Column('track_token_hash', sa.String(length=64), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.ForeignKeyConstraint(['assigned_rider_id'], ['staff.id'], ),
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['recipient_id'], ['recipients.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_orders_number'), 'orders', ['number'], unique=True)
     op.create_index(op.f('ix_orders_status'), 'orders', ['status'], unique=False)
+    op.create_index(op.f('ix_orders_track_token_hash'), 'orders', ['track_token_hash'], unique=True)
     op.create_table('order_events',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('order_id', sa.Integer(), nullable=False),
@@ -199,6 +219,7 @@ def upgrade() -> None:
     sa.Column('product_id', sa.Integer(), nullable=True),
     sa.Column('variant_id', sa.Integer(), nullable=True),
     sa.Column('name_snapshot', sa.String(length=255), nullable=False),
+    sa.Column('tier_snapshot', sa.String(length=16), nullable=True),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('unit_price_cents', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),
@@ -212,7 +233,7 @@ def upgrade() -> None:
     sa.Column('stripe_payment_intent_id', sa.String(length=255), nullable=True),
     sa.Column('amount_cents', sa.Integer(), nullable=False),
     sa.Column('currency', sa.String(length=3), nullable=False),
-    sa.Column('status', sa.Enum('PENDING', 'SUCCEEDED', 'FAILED', 'REFUNDED', name='paymentstatus'), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED', name='paymentstatus'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),
@@ -228,6 +249,7 @@ def downgrade() -> None:
     op.drop_table('payments')
     op.drop_table('order_items')
     op.drop_table('order_events')
+    op.drop_index(op.f('ix_orders_track_token_hash'), table_name='orders')
     op.drop_index(op.f('ix_orders_status'), table_name='orders')
     op.drop_index(op.f('ix_orders_number'), table_name='orders')
     op.drop_table('orders')
@@ -241,6 +263,8 @@ def downgrade() -> None:
     op.drop_table('stripe_events')
     op.drop_index(op.f('ix_staff_email'), table_name='staff')
     op.drop_table('staff')
+    op.drop_index(op.f('ix_slot_capacity_slot_date'), table_name='slot_capacity')
+    op.drop_table('slot_capacity')
     op.drop_index(op.f('ix_products_slug'), table_name='products')
     op.drop_index(op.f('ix_products_occasion'), table_name='products')
     op.drop_index(op.f('ix_products_category'), table_name='products')

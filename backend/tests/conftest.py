@@ -1,10 +1,12 @@
 import os
 from collections.abc import AsyncGenerator
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
+    AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
@@ -152,3 +154,44 @@ async def owner(client: AsyncClient) -> tuple[AsyncClient, dict[str, str]]:
 @pytest_asyncio.fixture
 async def florist(client: AsyncClient) -> tuple[AsyncClient, dict[str, str]]:
     return client, await _login(client, FLORIST_EMAIL)
+
+
+@pytest_asyncio.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Raw session (fresh schema, no seed) for repository/domain tests."""
+    engine = _make_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+    async with maker() as session:
+        yield session
+    await engine.dispose()
+
+
+def _checkout_body(
+    *,
+    variant_id: str = "rose-di-roma-premium",
+    delivery_type: str = "standard",
+    slot: str | None = None,
+    cap: str = "00144",
+    quantity: int = 1,
+) -> dict:
+    body: dict = {
+        "items": [{"variant_id": variant_id, "quantity": quantity}],
+        "delivery_type": delivery_type,
+        "sender": {"name": "Sam Sender", "email": "sam@example.com", "locale": "en"},
+        "recipient": {
+            "name": "Rita Recipient",
+            "address_line": "Via Appia 1",
+            "cap": cap,
+            "city": "Roma",
+        },
+    }
+    if slot:
+        body["delivery_slot"] = slot
+    return body
+
+
+@pytest.fixture
+def checkout_body():  # type: ignore[no-untyped-def]
+    return _checkout_body

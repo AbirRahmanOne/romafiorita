@@ -153,3 +153,120 @@ class CartQuoteResponse(BaseModel):
     time_fee_cents: int
     total_cents: int
     currency: str = "EUR"
+
+
+# --- Checkout ------------------------------------------------------------
+
+
+class SenderIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    email: EmailStr
+    phone: str | None = Field(default=None, max_length=32)
+    country: str | None = Field(default=None, min_length=2, max_length=2)
+    locale: str = Field(default="it", pattern="^(it|en)$")
+
+
+class RecipientIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    phone: str | None = Field(default=None, max_length=32)
+    address_line: str = Field(min_length=1, max_length=512)
+    cap: str = Field(pattern=r"^\d{5}$")
+    city: str = Field(min_length=1, max_length=128)
+    address_type: str = Field(default="HOME", max_length=32)
+
+
+class CheckoutRequest(BaseModel):
+    items: list[CartItem] = Field(min_length=1)
+    delivery_type: str = "standard"
+    delivery_slot: str | None = None  # ISO datetime for Rome window/exact
+    sender: SenderIn
+    recipient: RecipientIn
+    card_message: str | None = Field(default=None, max_length=300)
+    hide_sender: bool = False
+
+
+class CheckoutResponse(BaseModel):
+    order_number: str
+    token: str
+    client_secret: str
+    subtotal_cents: int
+    delivery_cents: int
+    time_fee_cents: int
+    total_cents: int
+    currency: str = "EUR"
+
+
+# --- Tracking (public-safe) ----------------------------------------------
+
+
+class TimelineStep(BaseModel):
+    status: str
+    done: bool
+
+
+class TrackItem(BaseModel):
+    name: str
+    tier: str
+
+
+class TrackResponse(BaseModel):
+    order_number: str
+    status: str
+    timeline: list[TimelineStep]
+    bouquet_photo: str | None
+    delivery_slot: str | None
+    total_cents: int
+    items: list[TrackItem]
+
+
+# --- Admin orders --------------------------------------------------------
+
+
+class AdminOrderItem(BaseModel):
+    name: str
+    tier: str | None
+    quantity: int
+    unit_price_cents: int
+
+
+class OrderEventRead(BaseModel):
+    actor: str
+    from_status: str | None
+    to_status: str | None
+    note: str | None
+
+
+class AdminOrderRead(BaseModel):
+    id: int
+    number: str
+    status: str
+    sender_name: str | None
+    sender_email: str | None
+    sender_country: str | None
+    recipient_name: str | None
+    recipient_address: str | None
+    recipient_cap: str | None
+    delivery_type: str
+    delivery_date: datetime.date | None
+    slot_start: datetime.datetime | None
+    total_cents: int
+    currency: str
+    card_message: str | None
+    hide_sender: bool
+    bouquet_photo: str | None
+    items: list[AdminOrderItem]
+    events: list[OrderEventRead] = []
+
+
+class AdminOrderListResponse(BaseModel):
+    items: list[AdminOrderRead]
+    counts: dict[str, int]
+
+
+class PhotoBody(BaseModel):
+    url: str = Field(min_length=1, max_length=512)
+
+
+class RefundBody(BaseModel):
+    amount_cents: int | None = Field(default=None, ge=1)
+    reason: str | None = Field(default=None, max_length=255)
