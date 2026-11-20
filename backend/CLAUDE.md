@@ -11,12 +11,15 @@ Read before working here: **`backend-api-conventions`**. Domain rules:
 ## Layout
 
 ```
-app/main.py        FastAPI app + CORS + error handler + routers
+app/main.py        create_app() factory + lifespan, middleware, error handlers
 app/config.py      pydantic-settings (.env)
-app/db.py          lazy async engine + get_session dependency
+app/db.py          lazy async engine + get_session + dispose_engine (lifespan)
 app/models.py      SQLAlchemy models (14 tables)
 app/schemas.py     Pydantic read models
-app/routers/       endpoints: health, products
+app/core/          security (auth), logging (structured JSON + request_id)
+app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
+app/api/v1/        versioned router tree: admin/ (auth), public/ (catalog), webhooks/ (later)
+app/deps.py        auth deps: current_staff, require_roles, csrf_protect
 app/repositories/  DB access (products)
 alembic/           async migrations (initial schema committed under versions/)
 scripts/export_openapi.py   dump openapi.json (TS client source)
@@ -28,8 +31,9 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
 
 ## API
 
-- `GET /health` → `{"status":"ok"}`
-- `GET /products?occasion=&limit=&offset=` → `{items, total}` (active only)
+- `GET /healthz` (liveness) · `GET /readyz` (DB check) · `GET /health` (deprecated alias)
+- `GET /products…` is **deprecated** — superseded by `/v1/catalog/*` (tiered) in Phase 4;
+  kept working until the frontend migrates.
 - `GET /products/{slug}` → product or 404
 - Catalog writes (`POST/PATCH/DELETE /products…`) require OWNER/MANAGER + CSRF header.
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —

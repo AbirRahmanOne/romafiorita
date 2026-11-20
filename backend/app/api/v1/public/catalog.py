@@ -7,7 +7,9 @@ from app.models import StaffRole
 from app.repositories import products as repo
 from app.schemas import ProductCreate, ProductList, ProductRead, ProductUpdate
 
-router = APIRouter(prefix="/products", tags=["products"])
+# Deprecated: superseded by /v1/catalog/products (tiered shape) in Phase 4.
+# Kept working until the frontend migrates; sunset once it has.
+router = APIRouter(prefix="/products", tags=["products"], deprecated=True)
 
 # Catalog writes are OWNER/MANAGER only and CSRF-protected (cookie auth).
 _can_write = Depends(require_roles(StaffRole.OWNER, StaffRole.MANAGER))
