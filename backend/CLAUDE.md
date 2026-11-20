@@ -18,10 +18,12 @@ app/models.py      SQLAlchemy models (14 tables)
 app/schemas.py     Pydantic read models
 app/routers/       endpoints: health, products
 app/repositories/  DB access (products)
-alembic/           async migrations
+alembic/           async migrations (initial schema committed under versions/)
 scripts/export_openapi.py   dump openapi.json (TS client source)
+openapi.json       committed contract snapshot (test_openapi_snapshot guards drift)
 seed.py            sample products + Rome zone + slot rule
-tests/             pytest against in-memory SQLite (httpx ASGITransport)
+tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is set
+.github/workflows/ci.yml   lint, typecheck, PG-backed tests, migration round-trip, pip-audit
 ```
 
 ## API
@@ -30,7 +32,8 @@ tests/             pytest against in-memory SQLite (httpx ASGITransport)
 - `GET /products?occasion=&limit=&offset=` → `{items, total}` (active only)
 - `GET /products/{slug}` → product or 404
 - Errors use `{"error": {code, message, details}}` (see the handler in `main.py`).
-- Export schema: `python -m scripts.export_openapi` → `openapi.json`.
+- Export schema: `python -m scripts.export_openapi` → `openapi.json` (commit the diff;
+  `test_openapi_snapshot` fails on unintended drift).
 
 ## Rules
 
