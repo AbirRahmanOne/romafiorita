@@ -60,6 +60,36 @@ def require_roles(
     return guard
 
 
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "anon"
+
+
+def rate_limit(
+    name: str, *, limit: int, window_seconds: int = 60
+) -> Callable[[Request], Awaitable[None]]:
+    """Dependency factory: throttle by client IP. No-op if no limiter is
+    configured on app.state (e.g. tests without the lifespan)."""
+
+    async def guard(request: Request) -> None:
+        limiter = getattr(request.app.state, "rate_limiter", None)
+        if limiter is None:
+            return
+        key = f"{name}:{_client_ip(request)}"
+        if not await limiter.allow(key, limit, window_seconds):
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "code": "rate_limited",
+                    "message": "Too many requests. Please slow down.",
+                },
+            )
+
+    return guard
+
+
 async def csrf_protect(request: Request) -> None:
     """Double-submit cookie check for cookie-authenticated mutations."""
     cookie = request.cookies.get(CSRF_COOKIE)

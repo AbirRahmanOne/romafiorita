@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import ids
 from app.db import get_session
+from app.deps import rate_limit
 from app.payments import PaymentProvider, get_payment_provider
 from app.schemas import (
     CustomItem,
@@ -49,7 +50,10 @@ async def get_pay(
 
 
 @router.post(
-    "/pay/{token}/intent", response_model=PayIntentResponse, operation_id="payIntent"
+    "/pay/{token}/intent",
+    response_model=PayIntentResponse,
+    operation_id="payIntent",
+    dependencies=[Depends(rate_limit("pay", limit=10))],
 )
 async def pay_intent(
     token: str,
@@ -71,7 +75,12 @@ async def pay_intent(
     )
 
 
-@router.post("/verify", response_model=VerifyResponse, operation_id="verifyOrder")
+@router.post(
+    "/verify",
+    response_model=VerifyResponse,
+    operation_id="verifyOrder",
+    dependencies=[Depends(rate_limit("verify", limit=5))],
+)
 async def verify(
     body: VerifyRequest, session: AsyncSession = Depends(get_session)
 ) -> VerifyResponse:

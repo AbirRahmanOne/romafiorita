@@ -14,6 +14,7 @@ from .api import system
 from .api.v1 import v1_router
 from .config import settings
 from .core.logging import configure_logging
+from .core.ratelimit import InMemoryRateLimiter
 from .db import dispose_engine
 
 _access_log = logging.getLogger("romafiorita.access")
@@ -50,6 +51,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logging.getLogger("romafiorita").info(
         "startup", extra={"env": settings.environment}
     )
+    # ponytail: in-memory limiter is per-process; swap to RedisRateLimiter when
+    # running multiple instances.
+    app.state.rate_limiter = InMemoryRateLimiter()
     yield
     await dispose_engine()
 

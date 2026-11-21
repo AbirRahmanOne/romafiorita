@@ -220,6 +220,26 @@
         }
       }
     },
+    "/v1/admin/orders/stream": {
+      "get": {
+        "tags": [
+          "admin-stream"
+        ],
+        "summary": "Stream",
+        "description": "Authenticated Server-Sent Events of order changes (heartbeat keeps it open).",
+        "operationId": "stream_v1_admin_orders_stream_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/orders": {
       "get": {
         "tags": [

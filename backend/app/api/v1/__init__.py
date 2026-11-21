@@ -14,6 +14,7 @@ from app.api.v1.admin import payment_requests as admin_payment_requests
 from app.api.v1.admin import payments as admin_payments
 from app.api.v1.admin import settings as admin_settings
 from app.api.v1.admin import staff as admin_staff
+from app.api.v1.admin import stream as admin_stream
 from app.api.v1.admin import uploads as admin_uploads
 from app.api.v1.public import (
     cart,
@@ -30,6 +31,8 @@ v1_router = APIRouter()
 # admin
 v1_router.include_router(auth.router)
 v1_router.include_router(admin_catalog.router)
+# /orders/stream must register before /orders/{order_id} to win the match.
+v1_router.include_router(admin_stream.router)
 v1_router.include_router(admin_orders.router)
 v1_router.include_router(admin_payment_requests.router)
 v1_router.include_router(admin_payments.router)

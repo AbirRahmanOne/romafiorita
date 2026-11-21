@@ -1,0 +1,75 @@
+# Render blueprint — API + arq worker + Postgres + Redis, Frankfurt.
+# Deploy: connect this repo as a Blueprint in the Render dashboard.
+
+databases:
+  - name: romafiorita-db
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+
+services:
+  - type: redis
+    name: romafiorita-redis
+    region: frankfurt
+    plan: starter
+    ipAllowList: []  # only reachable from Render services
+
+  - type: web
+    name: romafiorita-api
+    runtime: python
+    region: frankfurt
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: romafiorita-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: romafiorita-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_DOMAIN
+        value: .romafiorita.com
+      - key: PAY_BASE_URL
+        value: https://romafiorita.com/pay
+      - key: CORS_ORIGINS
+        value: '["https://romafiorita.com","https://www.romafiorita.com","https://admin.romafiorita.com"]'
+      # Set when the services are configured (dashboard, not in git):
+      # STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY
+
+  - type: worker
+    name: romafiorita-worker
+    runtime: python
+    region: frankfurt
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: arq app.workers.arq.WorkerSettings
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: romafiorita-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: romafiorita-redis
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: romafiorita-api
+          envVarKey: JWT_SECRET

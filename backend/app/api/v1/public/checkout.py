@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.deps import rate_limit
 from app.payments import PaymentProvider, get_payment_provider
 from app.schemas import CheckoutRequest, CheckoutResponse
 from app.services.checkout import CheckoutError, create_checkout
@@ -9,7 +10,12 @@ from app.services.checkout import CheckoutError, create_checkout
 router = APIRouter(prefix="/v1", tags=["checkout"])
 
 
-@router.post("/checkout", response_model=CheckoutResponse, operation_id="checkout")
+@router.post(
+    "/checkout",
+    response_model=CheckoutResponse,
+    operation_id="checkout",
+    dependencies=[Depends(rate_limit("checkout", limit=10))],
+)
 async def checkout(
     data: CheckoutRequest,
     session: AsyncSession = Depends(get_session),

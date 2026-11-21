@@ -16,12 +16,13 @@ app/config.py      pydantic-settings (.env)
 app/db.py          lazy async engine + get_session + dispose_engine (lifespan)
 app/models.py      SQLAlchemy models (17 tables)
 app/schemas.py     Pydantic read models
-app/core/          security (auth), logging, ids (order number + tokens)
+app/core/          config, security, logging, ids, ratelimit, http_cache (ETag)
 app/domain/        pure logic: delivery engine, pricing, order state machine — no FastAPI/DB
 app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
 app/notifications/ EmailProvider + MockEmailProvider, IT/EN templates, order emails
 app/integrations/  r2 upload signer (interface + mock)
-app/workers/       background task functions (expiry sweep, reminders, GDPR retention)
+app/realtime/      in-process event bus for admin SSE
+app/workers/       tasks.py (expiry/reminders/retention) + arq.py (cron worker, needs Redis)
 app/services/      use cases: checkout, payment_requests, pdf, settings, analytics, gdpr
 app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
 app/api/v1/        router tree: admin/ (auth, catalog, orders), public/ (catalog,
@@ -81,6 +82,13 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
   `POST /v1/admin/gdpr/delete` (+CSRF, anonymises PII, keeps financial records).
 - Indexes: orders(status,delivery_date), orders(created_at), orders(customer_id/delivery_date),
   payments(order_id/created_at), order_events/order_items/payment_requests(order_id), etc.
+- Rate limiting: `Depends(rate_limit(name, limit=...))` on checkout/verify/pay/delivery-check
+  (in-memory limiter on `app.state`, Redis for multi-instance). Public catalog GETs send
+  ETag + Cache-Control (`app/core/http_cache.py`).
+- Realtime: SSE `GET /v1/admin/orders/stream` (authed) via `app/realtime` bus; transitions
+  publish events. Worker: `arq app.workers.arq.WorkerSettings` (cron, needs Redis).
+- Deploy: `render.yaml` (API web + arq worker + Postgres 16 + Redis, Frankfurt; migrations in
+  preDeploy). Docs: `docs/architecture.md`, `docs/runbook.md`, `docs/api-changelog.md`, ADRs.
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
   argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
   lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.

@@ -9,6 +9,7 @@ from app.models import Order, OrderEvent, OrderStatus, Payment, PaymentStatus, S
 from app.notifications.service import notify_order
 from app.notifications.templates import NotificationKind
 from app.payments import PaymentProvider, get_payment_provider
+from app.realtime.bus import get_event_bus
 from app.repositories import orders as repo
 from app.repositories import slots as slot_repo
 from app.schemas import (
@@ -175,6 +176,9 @@ async def _transition(
     kind = _NOTIFY.get(action)
     if kind is not None:
         notify_order(order, kind)
+    await get_event_bus().publish(
+        {"order_id": order.id, "number": order.number, "status": order.status.value}
+    )
 
 
 @router.get("", response_model=AdminOrderListResponse)

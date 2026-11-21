@@ -1,8 +1,9 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.http_cache import cache_or_304
 from app.db import get_session
 from app.models import Product, ProductVariant
 from app.repositories import catalog as repo
@@ -70,13 +71,18 @@ def serialize_product(p: Product, locale: str) -> ProductRead:
     "/products", response_model=ProductListResponse, operation_id="listProducts"
 )
 async def list_products(
+    request: Request,
+    response: Response,
     occasion: str | None = Query(default=None),
     category: str | None = Query(default=None),
     locale: Locale = Query(default="it"),
     session: AsyncSession = Depends(get_session),
-) -> ProductListResponse:
+) -> ProductListResponse | Response:
     products = await repo.list_products(session, occasion=occasion, category=category)
-    return ProductListResponse(items=[serialize_product(p, locale) for p in products])
+    result = ProductListResponse(
+        items=[serialize_product(p, locale) for p in products]
+    )
+    return cache_or_304(request, response, result) or result
 
 
 @router.get(
@@ -84,16 +90,19 @@ async def list_products(
 )
 async def get_product(
     slug: str,
+    request: Request,
+    response: Response,
     locale: Locale = Query(default="it"),
     session: AsyncSession = Depends(get_session),
-) -> ProductRead:
+) -> ProductRead | Response:
     product = await repo.get_product_by_slug(session, slug)
     if product is None:
         raise HTTPException(
             status_code=404,
             detail={"code": "product_not_found", "message": "Product not found."},
         )
-    return serialize_product(product, locale)
+    result = serialize_product(product, locale)
+    return cache_or_304(request, response, result) or result
 
 
 @router.get(

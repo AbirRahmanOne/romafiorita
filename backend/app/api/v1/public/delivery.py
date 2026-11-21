@@ -1,7 +1,8 @@
 from datetime import UTC, date, datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.deps import rate_limit
 from app.domain import delivery
 from app.schemas import (
     DeliveryCheckResponse,
@@ -32,7 +33,10 @@ def _fees() -> DeliveryFees:
 
 
 @router.get(
-    "/check", response_model=DeliveryCheckResponse, operation_id="checkDelivery"
+    "/check",
+    response_model=DeliveryCheckResponse,
+    operation_id="checkDelivery",
+    dependencies=[Depends(rate_limit("delivery_check", limit=60))],
 )
 async def check(
     postcode: str,

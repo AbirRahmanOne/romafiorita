@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Public storefront base for pay links / QR codes.
     pay_base_url: str = "https://romafiorita.com/pay"
 
+    # GDPR retention: anonymise delivered-order PII older than this.
+    retention_months: int = 12
+
     @property
     def is_dev(self) -> bool:
         return self.environment == "development"
@@ -49,6 +52,18 @@ class Settings(BaseSettings):
     def secure_cookies(self) -> bool:
         """Secure flag off in dev so the http test/dev client keeps cookies."""
         return not self.is_dev
+
+    @model_validator(mode="after")
+    def _normalise_database_url(self) -> "Settings":
+        """Accept Render's postgres:// connection string, use the asyncpg driver."""
+        url = self.database_url
+        if url.startswith("postgres://"):
+            self.database_url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://"):
+            self.database_url = url.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
+        return self
 
     @model_validator(mode="after")
     def _require_real_secrets_outside_dev(self) -> "Settings":
