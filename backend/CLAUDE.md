@@ -70,8 +70,9 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
 - Content: `GET /v1/content/reviews` — real reviews only (empty until stored).
 - Uploads: `POST /v1/admin/uploads/sign` (OWNER/MANAGER/FLORIST + CSRF) — R2 signed PUT,
   server-generated key, image MIME allowlist.
-- Notifications: order/payment emails sent (synchronously, mock) on checkout + each
-  transition + payment-request create/pay — `app/notifications/`. Background jobs
+- Notifications: order/payment emails on checkout + each transition + payment-request
+  create/pay — `app/notifications/`. `enqueue_email` queues to the arq worker when a Redis
+  pool is connected (lifespan), else sends inline. Background jobs
   (`app/workers/tasks.py`): slot-expiry sweep, occasion reminders, GDPR retention —
   pure functions, to be scheduled by arq (Phase 5b).
 - Insights (OWNER/MANAGER, from our DB — `app/services/analytics.py`):

@@ -14,7 +14,24 @@ from arq.connections import RedisSettings
 
 from app.config import settings
 from app.db import get_sessionmaker
+from app.notifications.provider import EmailMessage, get_email_provider
 from app.workers import tasks
+
+
+async def send_email(
+    ctx: dict[str, Any],
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    template: str,
+    locale: str,
+) -> None:
+    await get_email_provider().send(
+        EmailMessage(
+            to=to, subject=subject, body=body, template=template, locale=locale
+        )
+    )
 
 
 async def expire_holds(ctx: dict[str, Any]) -> int:
@@ -35,6 +52,7 @@ async def gdpr_retention(ctx: dict[str, Any]) -> int:
 
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
+    functions = [send_email]
     cron_jobs = [
         # Release lapsed slot holds every 5 minutes.
         cron(expire_holds, minute=set(range(0, 60, 5))),

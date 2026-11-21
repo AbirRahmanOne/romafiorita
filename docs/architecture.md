@@ -36,6 +36,9 @@ Core:    app/core/{config,security,logging,ids,ratelimit,http_cache}
 - **Slots** are race-safe: an atomic `UPDATE … WHERE held_count < capacity` (no overbooking).
 - **Orders** move through a table-driven state machine (roles + guards + payment effects);
   every change writes an `OrderEvent`.
+- **Emails** enqueue to the arq worker (`send_email` job) when a Redis pool is connected;
+  they fall back to inline sending without a broker. The worker sends via `ResendProvider`
+  (if `RESEND_API_KEY`) or the mock, with retries + dead-letter.
 - **Payments** are behind a `PaymentProvider` interface — `MockPaymentProvider` today,
   `StripeProvider` + `/v1/webhooks/stripe` later (ADR 0002). Website orders use manual
   capture (authorise at checkout, capture on accept); payment-requests auto-capture.
@@ -57,8 +60,7 @@ payments · payment_requests · app_settings · stripe_events.
 
 ## Deferred / stubbed (tracked in memory + ADRs)
 
-Real Stripe adapter + webhooks; Resend is wired (`ResendProvider`, used when `RESEND_API_KEY`
-is set) but awaited inline — move it to the arq queue for fully off-request dispatch; SSE
+Real Stripe adapter + webhooks; SSE
 Redis pub/sub for multi-instance (bus is in-process); Google Search
 Console (`/insights/seo` is an empty stub); WhatsApp adapter; EXIF-strip/thumbnails on
 uploads; TOTP 2FA; accept-with-change / auto-accept; rider order-scoping.

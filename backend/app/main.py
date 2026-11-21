@@ -16,6 +16,7 @@ from .config import settings
 from .core.logging import configure_logging
 from .core.ratelimit import InMemoryRateLimiter
 from .db import dispose_engine
+from .notifications.dispatch import get_arq_pool, set_arq_pool
 
 _access_log = logging.getLogger("romafiorita.access")
 
@@ -54,7 +55,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ponytail: in-memory limiter is per-process; swap to RedisRateLimiter when
     # running multiple instances.
     app.state.rate_limiter = InMemoryRateLimiter()
+
+    # Connect the arq pool so emails enqueue off-request. If Redis is unavailable
+    # (dev without a broker), fall back to inline sending.
+    try:
+        from arq import create_pool
+        from arq.connections import RedisSettings
+
+        set_arq_pool(await create_pool(RedisSettings.from_dsn(settings.redis_url)))
+    except Exception as exc:  # noqa: BLE001 - degrade to inline email dispatch
+        logging.getLogger("romafiorita").warning(
+            "arq_pool_unavailable", extra={"error": str(exc)}
+        )
+
     yield
+
+    pool = get_arq_pool()
+    if pool is not None:
+        await pool.close()
+        set_arq_pool(None)
     await dispose_engine()
 
 

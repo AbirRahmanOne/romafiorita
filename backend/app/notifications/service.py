@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from app.models import Order
-from app.notifications.provider import EmailMessage, get_email_provider
+from app.notifications.dispatch import enqueue_email
+from app.notifications.provider import EmailMessage
 from app.notifications.templates import NotificationKind, render
 
 
@@ -25,7 +26,7 @@ async def notify_order(order: Order, kind: NotificationKind, *, link: str = "") 
         total=_euro(order.total_cents),
         link=link,
     )
-    await get_email_provider().send(
+    await enqueue_email(
         EmailMessage(
             to=customer.email,
             subject=subject,
@@ -46,7 +47,7 @@ _REMINDER = {
 
 async def notify_occasion_reminder(email: str, locale: str, occasion: str) -> None:
     subject, body = _REMINDER.get(locale, _REMINDER["en"])
-    await get_email_provider().send(
+    await enqueue_email(
         EmailMessage(
             to=email,
             subject=subject.format(occasion=occasion),
