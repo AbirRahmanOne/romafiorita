@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Reject bodies larger than this (bytes). Bouquet photos go via R2, not here.
     max_request_bytes: int = 1_000_000
 
+    # Public storefront base for pay links / QR codes.
+    pay_base_url: str = "https://romafiorita.com/pay"
+
     @property
     def is_dev(self) -> bool:
         return self.environment == "development"

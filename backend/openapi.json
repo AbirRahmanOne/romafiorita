@@ -1138,6 +1138,46 @@
         }
       }
     },
+    "/v1/admin/uploads/sign": {
+      "post": {
+        "tags": [
+          "admin-uploads"
+        ],
+        "summary": "Sign Upload",
+        "operationId": "signUpload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSignResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/catalog/products": {
       "get": {
         "tags": [
@@ -4150,6 +4190,35 @@
           "items"
         ],
         "title": "TrackResponse"
+      },
+      "UploadSignRequest": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "default": "image/jpeg"
+          }
+        },
+        "type": "object",
+        "title": "UploadSignRequest"
+      },
+      "UploadSignResponse": {
+        "properties": {
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          },
+          "public_url": {
+            "type": "string",
+            "title": "Public Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_url",
+          "public_url"
+        ],
+        "title": "UploadSignResponse"
       },
       "ValidationError": {
         "properties": {

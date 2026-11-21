@@ -25,6 +25,8 @@ from app.models import (
     ProductVariant,
     Recipient,
 )
+from app.notifications.service import notify_order
+from app.notifications.templates import NotificationKind
 from app.payments import PaymentIntent, PaymentProvider
 from app.repositories import catalog as catalog_repo
 from app.repositories import slots as slot_repo
@@ -140,6 +142,7 @@ async def create_checkout(
         )
     )
     await session.commit()
+    notify_order(order, NotificationKind.ORDER_RECEIVED)
     return order, token, intent
 
 

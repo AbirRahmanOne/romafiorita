@@ -195,3 +195,13 @@ def _checkout_body(
 @pytest.fixture
 def checkout_body():  # type: ignore[no-untyped-def]
     return _checkout_body
+
+
+@pytest.fixture
+def emails():  # type: ignore[no-untyped-def]
+    """The MockEmailProvider singleton, cleared for the test."""
+    from app.notifications import get_email_provider
+
+    provider = get_email_provider()
+    provider.sent.clear()  # type: ignore[attr-defined]
+    return provider

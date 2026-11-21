@@ -6,6 +6,8 @@ from app.db import get_session
 from app.deps import csrf_protect, get_current_staff
 from app.domain.orders import PaymentEffect, TransitionError, resolve
 from app.models import Order, OrderEvent, OrderStatus, Payment, PaymentStatus, Staff
+from app.notifications.service import notify_order
+from app.notifications.templates import NotificationKind
 from app.payments import PaymentProvider, get_payment_provider
 from app.repositories import orders as repo
 from app.repositories import slots as slot_repo
@@ -38,6 +40,16 @@ _ACTIONS = {
     "approve": "approve",
     "dispatch": "dispatch",
     "deliver": "deliver",
+}
+
+# state-machine action -> buyer notification (actions not listed send nothing).
+_NOTIFY = {
+    "accept": NotificationKind.ACCEPTED,
+    "decline": NotificationKind.DECLINED,
+    "send_photo": NotificationKind.PHOTO_SENT,
+    "dispatch": NotificationKind.OUT_FOR_DELIVERY,
+    "deliver": NotificationKind.DELIVERED,
+    "refund": NotificationKind.REFUNDED,
 }
 
 
@@ -160,6 +172,9 @@ async def _transition(
         )
     )
     await session.commit()
+    kind = _NOTIFY.get(action)
+    if kind is not None:
+        notify_order(order, kind)
 
 
 @router.get("", response_model=AdminOrderListResponse)

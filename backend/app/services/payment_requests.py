@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.core import ids
 from app.models import (
     Customer,
@@ -26,6 +27,8 @@ from app.models import (
     PaymentRequestStatus,
     PaymentStatus,
 )
+from app.notifications.service import notify_order
+from app.notifications.templates import NotificationKind
 from app.payments import PaymentIntent, PaymentProvider
 from app.schemas import CustomItem, PaymentRequestCreate, PaymentRequestUpdate
 
@@ -60,7 +63,11 @@ async def get_by_token_hash(
     return await session.scalar(
         select(PaymentRequest)
         .where(PaymentRequest.token_hash == token_hash)
-        .options(selectinload(PaymentRequest.order).selectinload(Order.items))
+        .options(
+            selectinload(PaymentRequest.order).selectinload(Order.items),
+            selectinload(PaymentRequest.order).selectinload(Order.customer),
+            selectinload(PaymentRequest.order).selectinload(Order.recipient),
+        )
     )
 
 
@@ -114,6 +121,9 @@ async def create(
     )
     session.add(pr)
     await session.commit()
+    notify_order(
+        order, NotificationKind.PAYMENT_REQUEST, link=f"{settings.pay_base_url}/{token}"
+    )
     return pr, token
 
 
@@ -248,6 +258,7 @@ async def pay(
         )
     )
     await session.commit()
+    notify_order(order, NotificationKind.PAYMENT_RECEIVED)
     return intent
 
 

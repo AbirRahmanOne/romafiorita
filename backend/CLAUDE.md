@@ -19,6 +19,9 @@ app/schemas.py     Pydantic read models
 app/core/          security (auth), logging, ids (order number + tokens)
 app/domain/        pure logic: delivery engine, pricing, order state machine — no FastAPI/DB
 app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
+app/notifications/ EmailProvider + MockEmailProvider, IT/EN templates, order emails
+app/integrations/  r2 upload signer (interface + mock)
+app/workers/       background task functions (expiry sweep, reminders, GDPR retention)
 app/services/      use cases: checkout, payment_requests, pdf, settings
 app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
 app/api/v1/        router tree: admin/ (auth, catalog, orders), public/ (catalog,
@@ -64,6 +67,12 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
   (filters `source`/`status` + KPIs) · `/payments/held` · `/payments/reports/monthly` (CSV).
   `/v1/admin/payouts` · `/disputes` are Stripe-only stubs (empty until StripeProvider).
 - Content: `GET /v1/content/reviews` — real reviews only (empty until stored).
+- Uploads: `POST /v1/admin/uploads/sign` (OWNER/MANAGER/FLORIST + CSRF) — R2 signed PUT,
+  server-generated key, image MIME allowlist.
+- Notifications: order/payment emails sent (synchronously, mock) on checkout + each
+  transition + payment-request create/pay — `app/notifications/`. Background jobs
+  (`app/workers/tasks.py`): slot-expiry sweep, occasion reminders, GDPR retention —
+  pure functions, to be scheduled by arq (Phase 5b).
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
   argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
   lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.

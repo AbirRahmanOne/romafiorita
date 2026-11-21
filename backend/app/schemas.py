@@ -518,3 +518,15 @@ class DisputesResponse(BaseModel):
 
 class ReviewsResponse(BaseModel):
     items: list[dict[str, object]]
+
+
+# --- Uploads -------------------------------------------------------------
+
+
+class UploadSignRequest(BaseModel):
+    content_type: str = "image/jpeg"
+
+
+class UploadSignResponse(BaseModel):
+    upload_url: str
+    public_url: str

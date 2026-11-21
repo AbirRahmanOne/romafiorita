@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.db import get_session
 from app.deps import csrf_protect, require_roles
 from app.models import PaymentRequest, PaymentRequestStatus, StaffRole
@@ -20,9 +21,6 @@ router = APIRouter(
 
 _can = Depends(require_roles(StaffRole.OWNER, StaffRole.MANAGER))
 _csrf = Depends(csrf_protect)
-
-# Placeholder public base for the pay link / QR.
-_PAY_BASE = "https://romafiorita.com/pay"
 
 
 def _serialize(pr: PaymentRequest, token: str | None = None) -> PaymentRequestRead:
@@ -162,7 +160,7 @@ async def pdf(
     # Reissuing a fresh link for the printout (prior links stop working).
     token = await svc.reissue_token(session, pr)
     content = generate_payment_request_pdf(
-        pr, order_number=pr.order.number, pay_url=f"{_PAY_BASE}/{token}"
+        pr, order_number=pr.order.number, pay_url=f"{settings.pay_base_url}/{token}"
     )
     return Response(
         content=content,
