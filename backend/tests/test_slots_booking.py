@@ -1,11 +1,14 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories import slots as repo
 
-_DAY = datetime(2026, 6, 15, 10, 0).date()
-_START = datetime(2026, 6, 15, 10, 0)
+# Slot datetimes are timezone-aware everywhere (checkout parses ISO with tz);
+# Postgres stores timestamptz and returns aware UTC, so compare aware here too.
+_SLOT = datetime(2026, 6, 15, 10, 0, tzinfo=UTC)
+_DAY = _SLOT.date()
+_START = _SLOT
 
 
 async def test_capacity_cannot_be_exceeded(db_session: AsyncSession) -> None:
@@ -25,4 +28,7 @@ async def test_release_frees_a_seat(db_session: AsyncSession) -> None:
 async def test_full_slot_starts(db_session: AsyncSession) -> None:
     await repo.book_slot(db_session, _DAY, _START, capacity=1)
     full = await repo.full_slot_starts(db_session, _DAY)
-    assert _START in full
+    assert len(full) == 1
+    # SQLite returns naive, Postgres aware — compare tz-agnostically.
+    start = next(iter(full)).replace(tzinfo=None)
+    assert start == _START.replace(tzinfo=None)
