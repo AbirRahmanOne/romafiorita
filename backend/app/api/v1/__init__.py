@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from app.api.v1.admin import auth
 from app.api.v1.admin import catalog as admin_catalog
+from app.api.v1.admin import insights as admin_insights
 from app.api.v1.admin import orders as admin_orders
 from app.api.v1.admin import payment_requests as admin_payment_requests
 from app.api.v1.admin import payments as admin_payments
@@ -35,6 +36,7 @@ v1_router.include_router(admin_payments.extras_router)
 v1_router.include_router(admin_settings.router)
 v1_router.include_router(admin_staff.router)
 v1_router.include_router(admin_uploads.router)
+v1_router.include_router(admin_insights.router)
 # public (storefront)
 v1_router.include_router(catalog.router)
 v1_router.include_router(delivery.router)

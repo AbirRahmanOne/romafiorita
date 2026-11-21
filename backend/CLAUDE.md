@@ -22,7 +22,7 @@ app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
 app/notifications/ EmailProvider + MockEmailProvider, IT/EN templates, order emails
 app/integrations/  r2 upload signer (interface + mock)
 app/workers/       background task functions (expiry sweep, reminders, GDPR retention)
-app/services/      use cases: checkout, payment_requests, pdf, settings
+app/services/      use cases: checkout, payment_requests, pdf, settings, analytics
 app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
 app/api/v1/        router tree: admin/ (auth, catalog, orders), public/ (catalog,
                    delivery, cart, checkout, orders)
@@ -73,6 +73,10 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
   transition + payment-request create/pay — `app/notifications/`. Background jobs
   (`app/workers/tasks.py`): slot-expiry sweep, occasion reminders, GDPR retention —
   pure functions, to be scheduled by arq (Phase 5b).
+- Insights (OWNER/MANAGER, from our DB — `app/services/analytics.py`):
+  `GET /v1/admin/dashboard` (KPIs, 7-day revenue, schedule, pending photos) ·
+  `/v1/admin/insights/sales?range=` (revenue/day, by occasion/tier/delivery/country,
+  new vs repeat, on-time %). `/v1/admin/insights/seo` is an empty stub (GSC not wired).
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
   argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
   lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.

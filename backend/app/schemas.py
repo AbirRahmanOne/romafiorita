@@ -530,3 +530,71 @@ class UploadSignRequest(BaseModel):
 class UploadSignResponse(BaseModel):
     upload_url: str
     public_url: str
+
+
+# --- Dashboard & insights ------------------------------------------------
+
+
+class DashboardKpis(BaseModel):
+    revenue_today_cents: int
+    orders_today: int
+    on_time_pct: float
+    photos_to_send: int
+
+
+class GoogleSummary(BaseModel):
+    clicks: int
+    delta_pct: float
+    orders_from_search: int
+
+
+class RevenuePoint(BaseModel):
+    day: str  # ISO date
+    revenue_cents: int
+
+
+class DashboardOrder(BaseModel):
+    id: int
+    number: str
+    status: str
+    recipient_name: str | None
+    slot_start: datetime.datetime | None
+    total_cents: int
+    bouquet_photo: str | None
+
+
+class DashboardResponse(BaseModel):
+    kpis: DashboardKpis
+    google: GoogleSummary
+    revenue_series: list[RevenuePoint]
+    schedule: list[DashboardOrder]
+    pending_photos: list[DashboardOrder]
+
+
+class SalesBreakdownItem(BaseModel):
+    key: str
+    revenue_cents: int
+    orders: int
+
+
+class SalesInsights(BaseModel):
+    range_days: int
+    revenue_series: list[RevenuePoint]
+    by_occasion: list[SalesBreakdownItem]
+    by_tier: list[SalesBreakdownItem]
+    by_delivery_type: list[SalesBreakdownItem]
+    by_country: list[SalesBreakdownItem]
+    new_customers: int
+    repeat_customers: int
+    on_time_pct: float
+
+
+class SeoInsights(BaseModel):
+    # Backed by Google Search Console — empty until the GSC integration lands.
+    kpis: list[dict[str, object]] = []
+    clicks: list[int] = []
+    impressions: list[int] = []
+    queries: list[dict[str, object]] = []
+    landing: list[dict[str, object]] = []
+    keywords: list[dict[str, object]] = []
+    connected: bool = False

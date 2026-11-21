@@ -1178,6 +1178,93 @@
         }
       }
     },
+    "/v1/admin/dashboard": {
+      "get": {
+        "tags": [
+          "admin-insights"
+        ],
+        "summary": "Dashboard",
+        "operationId": "dashboard_v1_admin_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/insights/sales": {
+      "get": {
+        "tags": [
+          "admin-insights"
+        ],
+        "summary": "Sales Insights",
+        "operationId": "sales_insights_v1_admin_insights_sales_get",
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Range"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesInsights"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/insights/seo": {
+      "get": {
+        "tags": [
+          "admin-insights"
+        ],
+        "summary": "Seo Insights",
+        "operationId": "seo_insights_v1_admin_insights_seo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeoInsights"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/catalog/products": {
       "get": {
         "tags": [
@@ -2413,6 +2500,139 @@
         ],
         "title": "Cutoffs"
       },
+      "DashboardKpis": {
+        "properties": {
+          "revenue_today_cents": {
+            "type": "integer",
+            "title": "Revenue Today Cents"
+          },
+          "orders_today": {
+            "type": "integer",
+            "title": "Orders Today"
+          },
+          "on_time_pct": {
+            "type": "number",
+            "title": "On Time Pct"
+          },
+          "photos_to_send": {
+            "type": "integer",
+            "title": "Photos To Send"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revenue_today_cents",
+          "orders_today",
+          "on_time_pct",
+          "photos_to_send"
+        ],
+        "title": "DashboardKpis"
+      },
+      "DashboardOrder": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "number": {
+            "type": "string",
+            "title": "Number"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "recipient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Name"
+          },
+          "slot_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Start"
+          },
+          "total_cents": {
+            "type": "integer",
+            "title": "Total Cents"
+          },
+          "bouquet_photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bouquet Photo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "status",
+          "recipient_name",
+          "slot_start",
+          "total_cents",
+          "bouquet_photo"
+        ],
+        "title": "DashboardOrder"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "kpis": {
+            "$ref": "#/components/schemas/DashboardKpis"
+          },
+          "google": {
+            "$ref": "#/components/schemas/GoogleSummary"
+          },
+          "revenue_series": {
+            "items": {
+              "$ref": "#/components/schemas/RevenuePoint"
+            },
+            "type": "array",
+            "title": "Revenue Series"
+          },
+          "schedule": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardOrder"
+            },
+            "type": "array",
+            "title": "Schedule"
+          },
+          "pending_photos": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardOrder"
+            },
+            "type": "array",
+            "title": "Pending Photos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kpis",
+          "google",
+          "revenue_series",
+          "schedule",
+          "pending_photos"
+        ],
+        "title": "DashboardResponse"
+      },
       "DeliveryCheckResponse": {
         "properties": {
           "zone": {
@@ -2489,6 +2709,29 @@
           "items"
         ],
         "title": "DisputesResponse"
+      },
+      "GoogleSummary": {
+        "properties": {
+          "clicks": {
+            "type": "integer",
+            "title": "Clicks"
+          },
+          "delta_pct": {
+            "type": "number",
+            "title": "Delta Pct"
+          },
+          "orders_from_search": {
+            "type": "integer",
+            "title": "Orders From Search"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clicks",
+          "delta_pct",
+          "orders_from_search"
+        ],
+        "title": "GoogleSummary"
       },
       "HTTPValidationError": {
         "properties": {
@@ -3657,6 +3900,24 @@
         "type": "object",
         "title": "RefundBody"
       },
+      "RevenuePoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "title": "Day"
+          },
+          "revenue_cents": {
+            "type": "integer",
+            "title": "Revenue Cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "revenue_cents"
+        ],
+        "title": "RevenuePoint"
+      },
       "ReviewsResponse": {
         "properties": {
           "items": {
@@ -3673,6 +3934,97 @@
           "items"
         ],
         "title": "ReviewsResponse"
+      },
+      "SalesBreakdownItem": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "revenue_cents": {
+            "type": "integer",
+            "title": "Revenue Cents"
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "revenue_cents",
+          "orders"
+        ],
+        "title": "SalesBreakdownItem"
+      },
+      "SalesInsights": {
+        "properties": {
+          "range_days": {
+            "type": "integer",
+            "title": "Range Days"
+          },
+          "revenue_series": {
+            "items": {
+              "$ref": "#/components/schemas/RevenuePoint"
+            },
+            "type": "array",
+            "title": "Revenue Series"
+          },
+          "by_occasion": {
+            "items": {
+              "$ref": "#/components/schemas/SalesBreakdownItem"
+            },
+            "type": "array",
+            "title": "By Occasion"
+          },
+          "by_tier": {
+            "items": {
+              "$ref": "#/components/schemas/SalesBreakdownItem"
+            },
+            "type": "array",
+            "title": "By Tier"
+          },
+          "by_delivery_type": {
+            "items": {
+              "$ref": "#/components/schemas/SalesBreakdownItem"
+            },
+            "type": "array",
+            "title": "By Delivery Type"
+          },
+          "by_country": {
+            "items": {
+              "$ref": "#/components/schemas/SalesBreakdownItem"
+            },
+            "type": "array",
+            "title": "By Country"
+          },
+          "new_customers": {
+            "type": "integer",
+            "title": "New Customers"
+          },
+          "repeat_customers": {
+            "type": "integer",
+            "title": "Repeat Customers"
+          },
+          "on_time_pct": {
+            "type": "number",
+            "title": "On Time Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "range_days",
+          "revenue_series",
+          "by_occasion",
+          "by_tier",
+          "by_delivery_type",
+          "by_country",
+          "new_customers",
+          "repeat_customers",
+          "on_time_pct"
+        ],
+        "title": "SalesInsights"
       },
       "SenderIn": {
         "properties": {
@@ -3725,6 +4077,69 @@
           "email"
         ],
         "title": "SenderIn"
+      },
+      "SeoInsights": {
+        "properties": {
+          "kpis": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Kpis",
+            "default": []
+          },
+          "clicks": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Clicks",
+            "default": []
+          },
+          "impressions": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Impressions",
+            "default": []
+          },
+          "queries": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Queries",
+            "default": []
+          },
+          "landing": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Landing",
+            "default": []
+          },
+          "keywords": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Keywords",
+            "default": []
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "SeoInsights"
       },
       "SettingsRead": {
         "properties": {
