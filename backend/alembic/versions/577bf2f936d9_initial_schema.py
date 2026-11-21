@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: b17590d56614
+Revision ID: 577bf2f936d9
 Revises: 
-Create Date: 2026-11-21 02:25:48.928358
+Create Date: 2026-11-21 02:40:55.063563
 
 """
 from collections.abc import Sequence
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b17590d56614'
+revision: str = '577bf2f936d9'
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -32,6 +32,13 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_addons_code'), 'addons', ['code'], unique=True)
+    op.create_table('app_settings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('data', sa.JSON(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('customers',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=True),
@@ -304,6 +311,7 @@ def downgrade() -> None:
     op.drop_table('delivery_zones')
     op.drop_index(op.f('ix_customers_email'), table_name='customers')
     op.drop_table('customers')
+    op.drop_table('app_settings')
     op.drop_index(op.f('ix_addons_code'), table_name='addons')
     op.drop_table('addons')
     # ### end Alembic commands ###

@@ -14,12 +14,12 @@ Read before working here: **`backend-api-conventions`**. Domain rules:
 app/main.py        create_app() factory + lifespan, middleware, error handlers
 app/config.py      pydantic-settings (.env)
 app/db.py          lazy async engine + get_session + dispose_engine (lifespan)
-app/models.py      SQLAlchemy models (16 tables)
+app/models.py      SQLAlchemy models (17 tables)
 app/schemas.py     Pydantic read models
 app/core/          security (auth), logging, ids (order number + tokens)
 app/domain/        pure logic: delivery engine, pricing, order state machine — no FastAPI/DB
 app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
-app/services/      use cases: checkout, payment_requests, pdf (branded, fpdf2+segno)
+app/services/      use cases: checkout, payment_requests, pdf, settings
 app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
 app/api/v1/        router tree: admin/ (auth, catalog, orders), public/ (catalog,
                    delivery, cart, checkout, orders)
@@ -56,6 +56,14 @@ tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is s
   create/resend/duplicate/edit; PDF reissues a fresh link). Public: `GET /v1/pay/{token}`
   (noindex, records view) · `POST /v1/pay/{token}/intent` (auto-capture → order ACCEPTED) ·
   `POST /v1/verify` (order#+email, no enumeration).
+- Admin settings: `GET/PATCH /v1/admin/settings` (OWNER/MANAGER + CSRF) — zones, fees,
+  cut-offs, blocked dates, capacity, notification recipients, business identity (nullable).
+  Public: `GET /v1/config/business` · `GET /v1/config/settings` (no recipients/business).
+- Admin staff (OWNER + CSRF): `GET/POST /v1/admin/staff` · `PATCH /{id}` (argon2 passwords).
+- Admin payments (OWNER/MANAGER, built from our Payment rows): `GET /v1/admin/payments`
+  (filters `source`/`status` + KPIs) · `/payments/held` · `/payments/reports/monthly` (CSV).
+  `/v1/admin/payouts` · `/disputes` are Stripe-only stubs (empty until StripeProvider).
+- Content: `GET /v1/content/reviews` — real reviews only (empty until stored).
 - `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
   argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
   lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.

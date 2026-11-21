@@ -367,3 +367,154 @@ class VerifyResponse(BaseModel):
     order_number: str | None = None
     amount_cents: int | None = None
     status: str | None = None
+
+
+# --- Settings ------------------------------------------------------------
+
+
+class BusinessIdentity(BaseModel):
+    # Nullable until the client supplies real values (spec §J).
+    company_name: str | None = None
+    address: str | None = None
+    vat_number: str | None = None
+    pec: str | None = None
+    phone: str | None = None
+    whatsapp: str | None = None
+
+
+class ZoneSetting(BaseModel):
+    name: str
+    type: str
+    fee_cents: int
+
+
+class SlotPricing(BaseModel):
+    window_cents: int
+    exact_cents: int
+
+
+class Cutoffs(BaseModel):
+    rome_hour: int
+    suburbs_hour: int
+
+
+class SettingsRead(BaseModel):
+    zones: list[ZoneSetting]
+    slot_pricing: SlotPricing
+    cutoffs: Cutoffs
+    blocked_dates: list[str]
+    daily_capacity: int
+    notification_recipients: list[str]
+    business: BusinessIdentity
+
+
+class PublicSettings(BaseModel):
+    zones: list[ZoneSetting]
+    slot_pricing: SlotPricing
+    cutoffs: Cutoffs
+    blocked_dates: list[str]
+
+
+class SettingsUpdate(BaseModel):
+    zones: list[ZoneSetting] | None = None
+    slot_pricing: SlotPricing | None = None
+    cutoffs: Cutoffs | None = None
+    blocked_dates: list[str] | None = None
+    daily_capacity: int | None = Field(default=None, ge=0)
+    notification_recipients: list[str] | None = None
+    business: BusinessIdentity | None = None
+
+
+# --- Staff ---------------------------------------------------------------
+
+
+class StaffRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    name: str
+    role: StaffRole
+    is_active: bool
+
+
+class StaffListResponse(BaseModel):
+    items: list[StaffRead]
+
+
+class StaffCreate(BaseModel):
+    email: EmailStr
+    name: str = Field(min_length=1, max_length=255)
+    role: StaffRole
+    password: str = Field(min_length=8, max_length=128)
+
+
+class StaffUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    role: StaffRole | None = None
+    is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+# --- Admin payments ------------------------------------------------------
+
+
+class PaymentRow(BaseModel):
+    id: int
+    order_number: str
+    source: str  # WEBSITE | PAYMENT_REQUEST
+    status: str  # held | captured | failed | refunded | cancelled
+    amount_cents: int
+    currency: str
+    fee_cents: int | None  # from Stripe balance tx (null without Stripe)
+    net_cents: int | None
+    created_at: datetime.datetime
+
+
+class PaymentKpis(BaseModel):
+    gross_cents: int
+    fees_cents: int
+    refunds_cents: int
+    net_cents: int
+
+
+class PaymentsListResponse(BaseModel):
+    kpis: PaymentKpis
+    items: list[PaymentRow]
+
+
+class HeldPayment(BaseModel):
+    id: int
+    order_number: str
+    amount_cents: int
+    currency: str
+    created_at: datetime.datetime
+    hold_expires_at: datetime.datetime
+
+
+class HeldListResponse(BaseModel):
+    items: list[HeldPayment]
+
+
+class MonthlyReport(BaseModel):
+    month: str
+    filename: str
+    csv: str
+
+
+class Balance(BaseModel):
+    available_cents: int
+    pending_cents: int
+
+
+class PayoutsResponse(BaseModel):
+    items: list[dict[str, object]]
+    balance: Balance
+
+
+class DisputesResponse(BaseModel):
+    items: list[dict[str, object]]
+
+
+class ReviewsResponse(BaseModel):
+    items: list[dict[str, object]]

@@ -412,6 +412,17 @@ class PaymentRequest(Base, TimestampMixin):
     order: Mapped[Order] = relationship()
 
 
+class AppSettings(Base, TimestampMixin):
+    """Single-row settings document (id always 1). Heterogeneous admin-editable
+    config (zones, fees, cut-offs, blocked dates, capacity, notification
+    recipients, business identity) kept as one JSON blob — see services/settings."""
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
 class StripeEvent(Base):
     """Idempotency ledger for Stripe webhooks."""
 
