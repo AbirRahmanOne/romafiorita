@@ -57,7 +57,8 @@ payments · payment_requests · app_settings · stripe_events.
 
 ## Deferred / stubbed (tracked in memory + ADRs)
 
-Real Stripe adapter + webhooks; Resend async dispatch (emails currently sent synchronously
-via the mock); SSE Redis pub/sub for multi-instance (bus is in-process); Google Search
+Real Stripe adapter + webhooks; Resend is wired (`ResendProvider`, used when `RESEND_API_KEY`
+is set) but awaited inline — move it to the arq queue for fully off-request dispatch; SSE
+Redis pub/sub for multi-instance (bus is in-process); Google Search
 Console (`/insights/seo` is an empty stub); WhatsApp adapter; EXIF-strip/thumbnails on
 uploads; TOTP 2FA; accept-with-change / auto-accept; rider order-scoping.

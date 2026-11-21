@@ -19,7 +19,7 @@ app/schemas.py     Pydantic read models
 app/core/          config, security, logging, ids, ratelimit, http_cache (ETag)
 app/domain/        pure logic: delivery engine, pricing, order state machine — no FastAPI/DB
 app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
-app/notifications/ EmailProvider + MockEmailProvider, IT/EN templates, order emails
+app/notifications/ EmailProvider (async): Resend adapter (RESEND_API_KEY) or mock; IT/EN
 app/integrations/  r2 upload signer (interface + mock)
 app/realtime/      in-process event bus for admin SSE
 app/workers/       tasks.py (expiry/reminders/retention) + arq.py (cron worker, needs Redis)

@@ -11,7 +11,7 @@ def _euro(cents: int) -> str:
     return f"{cents / 100:.2f}"
 
 
-def notify_order(order: Order, kind: NotificationKind, *, link: str = "") -> None:
+async def notify_order(order: Order, kind: NotificationKind, *, link: str = "") -> None:
     """Send the email for an order event. No-op if we have no sender email."""
     customer = order.customer
     if customer is None or not customer.email:
@@ -25,7 +25,7 @@ def notify_order(order: Order, kind: NotificationKind, *, link: str = "") -> Non
         total=_euro(order.total_cents),
         link=link,
     )
-    get_email_provider().send(
+    await get_email_provider().send(
         EmailMessage(
             to=customer.email,
             subject=subject,
@@ -44,9 +44,9 @@ _REMINDER = {
 }
 
 
-def notify_occasion_reminder(email: str, locale: str, occasion: str) -> None:
+async def notify_occasion_reminder(email: str, locale: str, occasion: str) -> None:
     subject, body = _REMINDER.get(locale, _REMINDER["en"])
-    get_email_provider().send(
+    await get_email_provider().send(
         EmailMessage(
             to=email,
             subject=subject.format(occasion=occasion),

@@ -76,7 +76,7 @@ async def send_due_occasion_reminders(
     for reminder in reminders:
         customer = reminder.customer
         if customer and customer.email:
-            notify_occasion_reminder(
+            await notify_occasion_reminder(
                 customer.email, customer.locale, reminder.occasion
             )
         reminder.sent_at = datetime.now(UTC)

@@ -175,7 +175,7 @@ async def _transition(
     await session.commit()
     kind = _NOTIFY.get(action)
     if kind is not None:
-        notify_order(order, kind)
+        await notify_order(order, kind)
     await get_event_bus().publish(
         {"order_id": order.id, "number": order.number, "status": order.status.value}
     )

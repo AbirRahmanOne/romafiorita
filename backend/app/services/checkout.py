@@ -142,7 +142,7 @@ async def create_checkout(
         )
     )
     await session.commit()
-    notify_order(order, NotificationKind.ORDER_RECEIVED)
+    await notify_order(order, NotificationKind.ORDER_RECEIVED)
     return order, token, intent
 
 

@@ -121,7 +121,7 @@ async def create(
     )
     session.add(pr)
     await session.commit()
-    notify_order(
+    await notify_order(
         order, NotificationKind.PAYMENT_REQUEST, link=f"{settings.pay_base_url}/{token}"
     )
     return pr, token
@@ -258,7 +258,7 @@ async def pay(
         )
     )
     await session.commit()
-    notify_order(order, NotificationKind.PAYMENT_RECEIVED)
+    await notify_order(order, NotificationKind.PAYMENT_RECEIVED)
     return intent
 
 
