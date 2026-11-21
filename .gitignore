@@ -34,8 +34,8 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 
-# Generated API schema (run scripts/export_openapi.py)
-backend/openapi.json
+# backend/openapi.json is committed as a contract snapshot (regenerate with
+# `python -m scripts.export_openapi`; a test fails on unintended drift).
 
 # Local SQLite dev database
 *.db

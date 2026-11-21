@@ -6,7 +6,32 @@ from datetime import time
 from sqlalchemy import select
 
 from app.db import get_sessionmaker
-from app.models import DeliveryType, DeliveryZone, Product, TimeSlotRule
+from app.models import (
+    AddOn,
+    DeliveryType,
+    DeliveryZone,
+    Product,
+    ProductTier,
+    ProductVariant,
+    TimeSlotRule,
+)
+
+
+def _tiers(slug: str, premium_cents: int) -> list[ProductVariant]:
+    spec = [
+        (ProductTier.STANDARD, round(premium_cents * 0.8), False),
+        (ProductTier.PREMIUM, premium_cents, True),
+        (ProductTier.LUXURY, round(premium_cents * 1.4), False),
+    ]
+    return [
+        ProductVariant(
+            sku=f"{slug}-{tier.value.lower()}",
+            tier=tier,
+            price_cents=cents,
+            is_default=is_default,
+        )
+        for tier, cents, is_default in spec
+    ]
 
 
 async def seed() -> None:
@@ -23,29 +48,32 @@ async def seed() -> None:
                     slug="rose-di-roma",
                     name_it="Rose di Roma",
                     name_en="Roses of Rome",
-                    description_it="Un classico mazzo di rose fresche.",
-                    description_en="A classic bouquet of fresh roses.",
-                    base_price_cents=4900,
+                    subtitle_it="Un classico mazzo di rose fresche.",
+                    subtitle_en="A classic bouquet of fresh roses.",
                     occasion="love",
+                    category="Roses",
+                    variants=_tiers("rose-di-roma", 4900),
                 ),
                 Product(
                     slug="primavera-romana",
                     name_it="Primavera Romana",
                     name_en="Roman Spring",
-                    description_it="Composizione colorata di stagione.",
-                    description_en="A colourful seasonal arrangement.",
-                    base_price_cents=3900,
+                    subtitle_it="Composizione colorata di stagione.",
+                    subtitle_en="A colourful seasonal arrangement.",
                     occasion="birthday",
+                    category="Seasonal",
+                    variants=_tiers("primavera-romana", 3900),
                 ),
-                Product(
-                    slug="mimosa-8-marzo",
-                    name_it="Mimosa 8 Marzo",
-                    name_en="Mimosa for 8 March",
-                    description_it="Mimosa per la Festa della Donna.",
-                    description_en="Mimosa for Women's Day.",
-                    base_price_cents=2900,
-                    occasion="festa-della-donna",
-                ),
+            ]
+        )
+        session.add_all(
+            [
+                AddOn(code="card", name_it="Biglietto scritto a mano",
+                      name_en="Handwritten card", price_cents=0),
+                AddOn(code="chocolates", name_it="Scatola di cioccolatini",
+                      name_en="Box of chocolates", price_cents=1200),
+                AddOn(code="vase", name_it="Vaso di vetro",
+                      name_en="Glass vase", price_cents=1800),
             ]
         )
 
@@ -64,13 +92,13 @@ async def seed() -> None:
                 capacity_per_rider=1,
                 cutoff_time=time(14, 0),  # placeholder [14:00]
                 exact_min_notice_minutes=180,  # placeholder [3h]
-                window_fee_cents=0,  # placeholder €[X]
-                exact_fee_cents=0,  # placeholder €[Y]
+                window_fee_cents=500,  # placeholder €[X]
+                exact_fee_cents=900,  # placeholder €[Y]
             )
         )
 
         await session.commit()
-        print("Seeded sample products, Rome zone and slot rule.")
+        print("Seeded sample products, add-ons, Rome zone and slot rule.")
 
 
 if __name__ == "__main__":

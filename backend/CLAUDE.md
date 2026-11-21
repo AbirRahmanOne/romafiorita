@@ -11,31 +11,105 @@ Read before working here: **`backend-api-conventions`**. Domain rules:
 ## Layout
 
 ```
-app/main.py        FastAPI app + CORS + error handler + routers
+app/main.py        create_app() factory + lifespan, middleware, error handlers
 app/config.py      pydantic-settings (.env)
-app/db.py          lazy async engine + get_session dependency
-app/models.py      SQLAlchemy models (14 tables)
+app/db.py          lazy async engine + get_session + dispose_engine (lifespan)
+app/models.py      SQLAlchemy models (17 tables)
 app/schemas.py     Pydantic read models
-app/routers/       endpoints: health, products
-app/repositories/  DB access (products)
-alembic/           async migrations
+app/core/          config, security, logging, ids, ratelimit, http_cache (ETag)
+app/domain/        pure logic: delivery engine, pricing, order state machine — no FastAPI/DB
+app/payments/      PaymentProvider interface + MockPaymentProvider (ADR 0002)
+app/notifications/ EmailProvider (async): Resend adapter (RESEND_API_KEY) or mock; IT/EN
+app/integrations/  r2 upload signer (interface + mock)
+app/realtime/      in-process event bus for admin SSE
+app/workers/       tasks.py (expiry/reminders/retention) + arq.py (cron worker, needs Redis)
+app/services/      use cases: checkout, payment_requests, pdf, settings, analytics, gdpr
+app/api/system.py  unversioned infra: /healthz, /readyz, /health (deprecated)
+app/api/v1/        router tree: admin/ (auth, catalog, orders), public/ (catalog,
+                   delivery, cart, checkout, orders)
+app/deps.py        auth deps: current_staff, require_roles, csrf_protect
+app/repositories/  DB access (catalog, orders, slots)
+alembic/           async migrations (initial schema committed under versions/)
 scripts/export_openapi.py   dump openapi.json (TS client source)
+openapi.json       committed contract snapshot (test_openapi_snapshot guards drift)
 seed.py            sample products + Rome zone + slot rule
-tests/             pytest against in-memory SQLite (httpx ASGITransport)
+tests/             pytest; SQLite by default, Postgres if TEST_DATABASE_URL is set
+.github/workflows/ci.yml   lint, typecheck, PG-backed tests, migration round-trip, pip-audit
 ```
 
 ## API
 
-- `GET /health` → `{"status":"ok"}`
-- `GET /products?occasion=&limit=&offset=` → `{items, total}` (active only)
-- `GET /products/{slug}` → product or 404
-- Errors use `{"error": {code, message, details}}` (see the handler in `main.py`).
-- Export schema: `python -m scripts.export_openapi` → `openapi.json`.
+- `GET /healthz` (liveness) · `GET /readyz` (DB check) · `GET /health` (deprecated alias)
+- Catalog (public, `?locale=it|en`): `GET /v1/catalog/products` (filter `occasion`,
+  `category`) · `/products/{slug}` · `/occasions` · `/addons`. Tiered variants
+  (STANDARD/PREMIUM/LUXURY); variant `id` is the opaque `sku`.
+- Delivery: `GET /v1/delivery/check?postcode=&date=` · `/v1/delivery/slots` — zones by CAP
+  (Rome 00118–00199), 15-min slots 07:00–23:45 Europe/Rome, fees window 500 / exact 900.
+- Cart: `POST /v1/cart/quote` — server-side totals from IDs only; never trust client prices.
+- Checkout: `POST /v1/checkout` — books a slot (race-safe), creates the order, authorises
+  payment (mock), returns `client_secret` + tracking `token`. Manual capture.
+- Tracking: `GET /v1/orders/track/{token}` — public-safe (no sender email / payment).
+- Admin orders: `GET /v1/admin/orders` (filter `status`, `q`) · `/{id}` ·
+  transitions `POST /{id}/{accept|decline|send-photo|approve|dispatch|deliver}` ·
+  `/{id}/photo` · `/{id}/refund`. State machine in `app/domain/orders.py` enforces
+  source state + per-action roles + guards; each move writes an OrderEvent.
+- Admin catalog: `POST /v1/admin/products` (create tiered product) — OWNER/MANAGER + CSRF.
+- Payment requests (custom orders, OWNER/MANAGER + CSRF): `POST/GET /v1/admin/payment-requests`
+  · PATCH/`/cancel`/`/resend`/`/duplicate`/`GET /{id}/pdf`. Server computes total, creates an
+  order in PAYMENT_REQUESTED; only the token hash is stored (raw token returned on
+  create/resend/duplicate/edit; PDF reissues a fresh link). Public: `GET /v1/pay/{token}`
+  (noindex, records view) · `POST /v1/pay/{token}/intent` (auto-capture → order ACCEPTED) ·
+  `POST /v1/verify` (order#+email, no enumeration).
+- Admin settings: `GET/PATCH /v1/admin/settings` (OWNER/MANAGER + CSRF) — zones, fees,
+  cut-offs, blocked dates, capacity, notification recipients, business identity (nullable).
+  Public: `GET /v1/config/business` · `GET /v1/config/settings` (no recipients/business).
+- Admin staff (OWNER + CSRF): `GET/POST /v1/admin/staff` · `PATCH /{id}` (argon2 passwords).
+- Admin payments (OWNER/MANAGER, built from our Payment rows): `GET /v1/admin/payments`
+  (filters `source`/`status` + KPIs) · `/payments/held` · `/payments/reports/monthly` (CSV).
+  `/v1/admin/payouts` · `/disputes` are Stripe-only stubs (empty until StripeProvider).
+- Content: `GET /v1/content/reviews` — real reviews only (empty until stored).
+- Uploads: `POST /v1/admin/uploads/sign` (OWNER/MANAGER/FLORIST + CSRF) — R2 signed PUT,
+  server-generated key, image MIME allowlist.
+- Notifications: order/payment emails on checkout + each transition + payment-request
+  create/pay — `app/notifications/`. `enqueue_email` queues to the arq worker when a Redis
+  pool is connected (lifespan), else sends inline. Background jobs
+  (`app/workers/tasks.py`): slot-expiry sweep, occasion reminders, GDPR retention —
+  pure functions, to be scheduled by arq (Phase 5b).
+- Insights (OWNER/MANAGER, from our DB — `app/services/analytics.py`):
+  `GET /v1/admin/dashboard` (KPIs, 7-day revenue, schedule, pending photos) ·
+  `/v1/admin/insights/sales?range=` (revenue/day, by occasion/tier/delivery/country,
+  new vs repeat, on-time %). `/v1/admin/insights/seo` is an empty stub (GSC not wired).
+- GDPR (OWNER): `GET /v1/admin/gdpr/export?email=` (subject access) ·
+  `POST /v1/admin/gdpr/delete` (+CSRF, anonymises PII, keeps financial records).
+- Indexes: orders(status,delivery_date), orders(created_at), orders(customer_id/delivery_date),
+  payments(order_id/created_at), order_events/order_items/payment_requests(order_id), etc.
+- Rate limiting: `Depends(rate_limit(name, limit=...))` on checkout/verify/pay/delivery-check
+  (in-memory limiter on `app.state`, Redis for multi-instance). Public catalog GETs send
+  ETag + Cache-Control (`app/core/http_cache.py`).
+- Realtime: SSE `GET /v1/admin/orders/stream` (authed) via `app/realtime` bus; transitions
+  publish events. Worker: `arq app.workers.arq.WorkerSettings` (cron, needs Redis).
+- Deploy: `render.yaml` (API web + arq worker + Postgres 16 + Redis, Frankfurt; migrations in
+  preDeploy). Docs: `docs/architecture.md`, `docs/runbook.md`, `docs/api-changelog.md`, ADRs.
+- `POST /v1/admin/auth/login` · `/refresh` · `/logout` · `GET /v1/admin/auth/me` —
+  argon2 passwords, JWT in httpOnly cookies, rotating refresh (reuse-detected), login
+  lockout. See `app/api/v1/admin/auth.py`, `app/deps.py`, `app/core/security.py`.
+- Errors use `{"error": {code, message, details, request_id}}` (handlers in `main.py`;
+  covers HTTPException, 422 validation, and a generic 500). `X-Request-ID` on every
+  response; security headers + request-size limit via middleware.
+- Export schema: `python -m scripts.export_openapi` → `openapi.json` (commit the diff;
+  `test_openapi_snapshot` fails on unintended drift).
+
+## Auth deps (use these on admin routes)
+
+- `Depends(get_current_staff)` — require a logged-in staff member.
+- `Depends(require_roles(StaffRole.OWNER, ...))` — role guard (403 otherwise).
+- `Depends(csrf_protect)` — double-submit CSRF check on cookie-authenticated mutations.
 
 ## Rules
 
-- **Money = integer cents**, currency EUR. **No Stripe / payments in this version** (the
-  `Payment`/`StripeEvent` models + empty Stripe settings are inert scaffolding for later).
+- **Money = integer cents**, currency EUR. **No live Stripe yet** — all payments go through
+  the `PaymentProvider` interface with `MockPaymentProvider` (ADR 0002). A real
+  `StripeProvider` + `/v1/webhooks/stripe` is a drop-in later.
 - Store timestamps **UTC** (timezone-aware); convert to `Europe/Rome` in the service layer.
 - Settings via `app/config.py`; keep `.env.example` current. **No secrets in git.**
 - CORS allowlist is in settings (storefront + admin + localhost).

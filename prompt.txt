@@ -1,336 +1,380 @@
-You are a senior full-stack engineer and product designer. We are starting a new production project. Work carefully and professionally, and follow the phases below in order. Do NOT build business features until Phase 0 and Phase 1 are complete and I have reviewed them.
+You are a principal backend engineer. The Roma Fiorita backend already exists and works. Your job is to make it production-grade and professional WITHOUT breaking it: audit first, then plan, then improve in small, safe, tested steps. Do NOT rewrite from scratch, and do NOT change behaviour the frontend depends on without a migration path. STOP for my review at the end of each phase.
 
 ══════════════════════════════════════
-PROJECT BRIEF
+1. PROJECT CONTEXT
 ══════════════════════════════════════
-Brand: Roma Fiorita
-Website: https://romafiorita.com
-What it is: an online flower and gift shop based in Rome (Roma), Italy.
+Brand: Roma Fiorita · https://romafiorita.com
+Business: online flower and gift shop in Rome, Italy.
+- Customers anywhere in the world order and pay online; delivery happens only inside Italy.
+- Rome (own riders): same-day delivery. Customers can choose Standard (any time that day), a 2-hour window (+fee) or an exact time (±15 min, +fee), in 15-minute slots from 07:00 to 23:45, with per-slot capacity.
+- Rest of Italy: next-day boxed delivery by courier, date only.
 
-Model: customers anywhere in the world order and pay online. Delivery happens ONLY inside Italy.
-- Rome: same-day delivery by the shop's own riders. Customers can book the delivery time as:
-  - Standard (any time in the day)
-  - a 2-hour window (+fee)
-  - an exact time, ±15 min (+fee)
-- Rest of Italy: next-day boxed bouquet delivery by courier, date only.
-
-Main buyer: lives abroad and sends flowers to a loved one in Italy. Trust is everything:
-- the shop sends a photo of the real bouquet before delivery
-- all-in prices, no hidden fees
+Trust model:
+- a photo of the real bouquet is sent to the buyer before delivery
+- all-in prices
 - on-time delivery
 
-Languages: Italian (it) and English (en).
-- URLs: romafiorita.com/it/... and romafiorita.com/en/...
-- No auto-redirect by location.
-- Currency: EUR only.
+Languages: IT and EN. Currency: EUR only.
 
-Brand voice:
-- EN: warm, romantic, honest. Example hero: "Send love to Rome — and all of Italy — from anywhere in the world."
-- IT: elegant, warm. Example hero: "Fiori a domicilio a Roma e in tutta Italia, da qualsiasi parte del mondo."
-- Logo: use a temporary elegant wordmark "Roma Fiorita" (Cormorant Garamond) until the real logo is supplied.
+Payments: Stripe, on an account in the owner's own name (business type "Individual", no VAT number yet).
+- Statement descriptor: ROMAFIORITA.
+- Website orders are AUTHORISED (held) at checkout and CAPTURED when the shop accepts the order. Declining releases the hold.
+- Custom-order payment requests are captured immediately on payment.
 
-Products at launch: bouquets, plants, gift add-ons (cards, teddy bears, balloons, vases). No food or alcohol.
+Repos and domains:
+- this repo = backend only, deployed at api.romafiorita.com
+- storefront (Next.js) at romafiorita.com and admin (Vite React SPA) at admin.romafiorita.com are a SEPARATE repo that consumes this API through a TypeScript client generated from our OpenAPI schema. The OpenAPI schema is therefore a product in itself: accurate, typed, stable.
 
-Occasions: Love/Anniversary, Birthday, Valentine's Day, Festa della Donna (8 March), Festa della Mamma, Sympathy, Thank you, Get well, Christmas, Corporate.
+Stack (keep it; justify any change): Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 (async), Alembic, PostgreSQL 16, Redis, arq background jobs. Hosting on Render (Frankfurt).
 
-Owner needs an admin dashboard (blue/white theme) to:
-- receive and accept/decline orders in real time
-- process orders through delivery
-- update products
-- see the delivery schedule
-- see Stripe payment history
-- see basic analytics
-
-Planned domains:
-- Storefront: romafiorita.com (www redirects to apex)
-- Admin: admin.romafiorita.com
-- API: api.romafiorita.com
-- Emails sent from: ordini@romafiorita.com (display name "Roma Fiorita"); support/reply-to: info@romafiorita.com
+Third-party services:
+- Stripe (payments)
+- Resend (email from ordini@romafiorita.com)
+- Cloudflare R2 (images)
+- Google Search Console API (SEO insights)
 
 ══════════════════════════════════════
-TECH STACK (use these unless you have a strong reason; explain any deviation)
+2. PHASE 0 — AUDIT (read-only; change nothing)
 ══════════════════════════════════════
-Monorepo (pnpm workspaces + uv for Python):
+Explore the whole repo and write docs/audit/AUDIT.md containing:
+1. Architecture map:
+   - folders, layers, entry points
+   - how config, the DB session, auth and errors work
+   - background jobs, external integrations
+2. Inventory:
+   - all endpoints (method, path, auth, request/response models)
+   - all DB tables and relations
+   - all Alembic migrations
+   - env vars, scheduled jobs, webhooks
+3. Gap analysis against the TARGET SPEC (sections 3–8): a table per area with Exists / Partial / Missing / Wrong, and evidence (file:line).
+4. Risk list, ranked Critical / High / Medium / Low, with file:line, impact and the proposed fix. Look specifically for:
+   - money as float
+   - trusting client-sent prices
+   - Stripe webhooks without signature verification or idempotency
+   - race conditions on slot capacity
+   - naive datetimes / timezone bugs
+   - N+1 queries, missing indexes
+   - secrets in code
+   - weak auth/cookies, missing role checks, IDOR (one user reading another's data)
+   - CORS too open
+   - unvalidated uploads
+   - unbounded queries without pagination
+   - inconsistent error formats
+   - missing tests on critical paths
+5. Contract check: compare our routes and schemas with the frontend's expected contract (section 8) and list differences.
+6. Tooling state:
+   - lint, typecheck and tests (run them and report results and coverage)
+   - CI, Docker, render.yaml
+   - dependency versions and known vulnerabilities (pip-audit)
 
-/apps/web — Customer storefront (romafiorita.com)
-- Next.js (App Router, latest stable), TypeScript strict, Tailwind CSS, shadcn/ui
-- next-intl for i18n
-- Server-side rendering for all public pages (SEO and AI-crawler friendly)
+Then write docs/audit/PLAN.md: a prioritised, phased remediation plan with small PR-sized steps, each step listing what it changes, its risk, and how it is tested and rolled back.
 
-/apps/admin — Admin dashboard (admin.romafiorita.com)
-- Next.js + TypeScript + Tailwind + shadcn/ui, separate app with its own theme
-- TanStack Table, Recharts
-
-/apps/api — Backend (api.romafiorita.com)
-- FastAPI, Python 3.12, Pydantic v2
-- SQLAlchemy 2.0 (async) + Alembic, PostgreSQL 16
-- Background jobs: arq + Redis (reminders, emails, notification fan-out)
-
-/packages/ui-tokens — Shared design tokens (both themes)
-
-/packages/api-client — TypeScript client generated from FastAPI's OpenAPI schema; never hand-written
-
-Services:
-- Payments: Stripe (Payment Element, Apple Pay, Google Pay, PayPal via Stripe, 3D Secure, Radar) and Stripe webhooks. Statement descriptor: "ROMAFIORITA".
-- Email: Resend (transactional templates with React Email), sending domain romafiorita.com (SPF/DKIM/DMARC)
-- Images: Cloudflare R2 (S3-compatible) with signed uploads; next/image for optimisation
-- Real-time new-order alerts in admin: Server-Sent Events from FastAPI, plus Web Push
-- Analytics: GA4 on the storefront. In admin v1, show sales analytics from our own DB, plus an embedded Looker Studio report for GA4/Search Console/Ads.
-- Hosting: Render, Frankfurt region (web service ×3, Postgres, Key Value/Redis, cron). Provide render.yaml with the custom domains above.
-- Local dev: docker-compose for Postgres + Redis; .env.example for every app
-
-Quality:
-- ESLint + Prettier; Ruff + mypy (strict on app code)
-- Vitest + Playwright (web/admin); pytest + httpx (api)
-- Pre-commit hooks
-- GitHub Actions CI: lint, typecheck, test on every PR
-
-══════════════════════════════════════
-DESIGN SYSTEMS
-══════════════════════════════════════
-1) STOREFRONT — PINK THEME (romantic, elegant, warm, premium but friendly; a feeling of Roman spring)
-
-Colour tokens:
-- primary:            #C2185B  (deep pink — buttons, links; white text on it passes WCAG AA)
-- primary-hover:      #A3134C
-- primary-soft:       #F8BBD0  (badges, highlights)
-- blush:              #FCE4EC  (section backgrounds)
-- background:         #FFF7FA  (page background, soft pink-white)
-- surface:            #FFFFFF  (cards)
-- ink:                #3A1F2B  (headings, body text — deep plum-brown, never pure black)
-- ink-muted:          #6B4E5A
-- border:             #F3D1DE
-- success (fresh):    #2E7D5B
-- warning:            #B26A00
-- danger:             #C62828
-
-Typography:
-- Headings and wordmark: "Cormorant Garamond" (600/700)
-- Body/UI: "DM Sans" (400/500/700)
-- Load via next/font.
-
-Style:
-- Rounded corners: 12–20px cards, full-pill buttons.
-- Soft shadows.
-- Generous whitespace.
-- Large real product photography; subtle Roman touches (e.g. delivery photos around Rome).
-- Subtle motion only (respect prefers-reduced-motion).
-
-2) ADMIN DASHBOARD — BLUE & WHITE THEME (clean, calm, data-first, highly usable on phone)
-
-Colour tokens:
-- primary:            #2563EB  (actions, active nav)
-- primary-hover:      #1D4ED8
-- primary-soft:       #DBEAFE
-- background:         #F5F8FF
-- surface:            #FFFFFF
-- sidebar:            #0F2A5F  (navy) with white text and the "Roma Fiorita · Admin" wordmark
-- ink:                #0F172A
-- ink-muted:          #475569
-- border:             #E2E8F0
-- Status colours, always paired with a text label:
-  - new: blue
-  - accepted: indigo
-  - preparing: amber
-  - out-for-delivery: violet
-  - delivered: green
-  - cancelled/refunded: slate/red
-
-Typography: "Inter" for everything; tabular numbers in tables and KPIs.
-
-Both themes:
-- WCAG AA contrast, 44px minimum tap targets, visible focus rings.
-- Never use colour as the only signal.
+STOP and summarise the top 10 findings and the plan.
 
 ══════════════════════════════════════
-PHASE 0 — PROJECT MEMORY & SKILLS (do this first)
+3. TARGET ARCHITECTURE & CONVENTIONS
 ══════════════════════════════════════
-Create the project guidance files for Claude Code.
+Layout (migrate gradually towards this):
+app/
+  main.py (app factory, lifespan) · core/ (config via pydantic-settings, logging, security, errors, ids, time, money)
+  api/v1/ (routers: public/, admin/, webhooks/) · deps.py (db session, current_user, role guards, pagination)
+  domain/ (pure business logic: delivery engine, pricing, order state machine, without FastAPI or DB imports)
+  services/ (use cases orchestrating repos + domain + integrations)
+  repositories/ (SQLAlchemy queries only) · models/ (ORM) · schemas/ (Pydantic API models)
+  integrations/ (stripe, resend, r2, search_console, whatsapp: thin, mockable adapters behind interfaces)
+  workers/ (arq tasks + cron) · tests/ (unit, integration, contract, e2e-api)
 
-A) /CLAUDE.md (root) containing:
-- project summary (Roma Fiorita, romafiorita.com)
-- monorepo map
-- tech stack
-- domains
-- how to run, test and lint each app
-- coding conventions
-- git conventions (Conventional Commits, small PRs)
-- definition of done
-- the rule: "read the relevant skill in .claude/skills before working in its area"
-
-Keep it concise (under ~200 lines). Add short CLAUDE.md files inside apps/web, apps/admin and apps/api with app-specific notes.
-
-B) Skills in .claude/skills/<skill-name>/SKILL.md
-Each SKILL.md starts with YAML frontmatter:
-  ---
-  name: <kebab-case-name>
-  description: <one sentence saying WHEN to use this skill>
-  ---
-followed by clear, specific, actionable instructions, checklists and short code examples. Put longer references next to SKILL.md (e.g. reference.md, examples/) and link them.
-
-Create these skills:
-
-1. storefront-design-system
-   - Pink tokens as Tailwind theme + CSS variables
-   - Roma Fiorita wordmark usage, typography scale
-   - Component rules (Button, Card, Badge, Input, DatePicker, TimeChip, Stepper, ProductCard, TrustStrip, CountdownTimer)
-   - Photography rules, accessibility checklist
-   - "Trust elements" that must appear on product, cart and checkout pages
-
-2. admin-design-system
-   - Blue/white tokens, layout (navy sidebar + top bar), tables, KPI cards, charts, status badges, forms
-   - Mobile behaviour of the order inbox
-   - Empty/loading/error states
-
-3. i18n-seo
-   - next-intl setup, message file structure (messages/it.json, messages/en.json), no hard-coded strings
-   - Italian is ~25% longer, so layouts must flex
-   - Localised slugs (e.g. /en/flower-delivery-rome, /it/consegna-fiori-roma)
-   - hreflang + x-default, canonical URLs on https://romafiorita.com, sitemap.xml per locale, robots.txt
-   - robots.txt allows OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Googlebot, Bingbot
-   - Metadata API usage, with default titles like "Roma Fiorita — Flower Delivery in Rome & Italy" / "Roma Fiorita — Consegna Fiori a Roma e in tutta Italia"
-   - JSON-LD: Organization (name "Roma Fiorita", url, logo, sameAs), Florist/LocalBusiness (Rome address placeholder), Product + Offer + shippingDetails, BreadcrumbList
-   - Landing-page rules: Rome neighbourhood pages (e.g. Trastevere, Prati, Parioli, EUR, Centro Storico) and other Italian cities, with real data only, no thin duplicate pages
-   - Core Web Vitals targets: LCP < 2.5s, INP < 200ms, CLS < 0.1
-
-4. checkout-and-delivery-rules
-   - Domain rules for delivery zones by postcode (CAP): Rome CAP ranges (001xx) for own-rider delivery; all other Italian CAPs go by courier
-   - Delivery types: ROME_SAME_DAY, ROME_WINDOW, ROME_EXACT, NATIONAL_COURIER
-   - Time slots in 15-min steps, slot capacity per rider, cut-off rules (exact time ≥ [3]h ahead), blocked dates and peak-day caps
-   - Europe/Rome timezone as source of truth; display sender's local time too
-   - Fees, recipient address types, "recipient not home" options, card message limits, hide-sender option
-   - Include a decision table and test cases
-
-5. stripe-payments
-   - Payment Element + PaymentIntents (EUR), statement descriptor ROMAFIORITA
-   - Idempotency keys
-   - Webhook handling: payment_intent.succeeded/failed, charge.refunded, charge.dispute.created, payout.paid
-   - Signature verification, idempotent event processing (store event ids)
-   - Refunds (full/partial) from admin
-   - Never trust client amounts: recompute server-side
-   - Radar/3DS
-   - Payment history, payouts and balance via Stripe API for the admin
-   - Test-mode cards and the Stripe CLI for local webhooks
-
-6. order-lifecycle
-   - Order numbers formatted RF-YYYY-NNNNN
-   - State machine: PENDING_PAYMENT → NEW (paid) → ACCEPTED → PREPARING → PHOTO_SENT → OUT_FOR_DELIVERY → DELIVERED
-   - Side states: DECLINED (auto full refund), CANCELLED, REFUNDED, PROBLEM
-   - Allowed transitions, who can trigger them (roles), side effects per transition (emails, push, audit log)
-   - Accept-with-change flow (sender approval)
-   - Auto-accept setting and acceptance timeout alerts
-
-7. backend-api-conventions
-   - FastAPI project layout: routers / services / repositories / schemas / models
-   - Async SQLAlchemy patterns, Alembic migration rules
-   - Pydantic v2 schemas, error format, pagination, money as integer cents
-   - Timestamps in UTC with Europe/Rome conversion in the service layer
-   - Settings via pydantic-settings
-   - Structured logging, rate limiting
-   - CORS limited to romafiorita.com and admin.romafiorita.com (+ localhost in dev)
-   - Auth: admin JWT in httpOnly cookies, roles OWNER / MANAGER / FLORIST / RIDER
-   - Customer accounts optional (guest checkout)
-   - OpenAPI → TS client generation
-
-8. admin-dashboard-features
-   - Screens and data each one needs:
-     - Dashboard KPIs
-     - New-orders inbox (real-time SSE + Web Push + sound; accept / accept-with-change / decline)
-     - Order detail (timeline, upload bouquet photo, assign rider, refund, print branded Roma Fiorita card and delivery note)
-     - Delivery schedule (day/week by booked time, capacity, late-risk alerts)
-     - Products CRUD (IT/EN fields side by side, sizes, add-ons, availability, SEO fields, image upload to R2)
-     - Customers & reminders, discount codes
-     - Payments (Stripe history, refunds, payouts, disputes, CSV export, monthly accountant report)
-     - Analytics (own sales data + embedded Looker Studio)
-     - Settings (zones, fees, slots, blocked dates, notification recipients, staff & roles)
-   - Role-based visibility: riders and florists never see payment data
-
-9. notifications-and-reminders
-   - Roma Fiorita-branded email templates (order confirmation, accepted, bouquet photo, out for delivery, delivered, reminder, abandoned cart, declined/refunded) in IT and EN, sent from ordini@romafiorita.com
-   - Occasion reminders 7 and 2 days before, via arq scheduled jobs
-   - Web Push for admin
-   - WhatsApp messages as a later add-on behind a feature flag
-
-10. testing-and-quality
-    - Test pyramid
-    - Required tests per area (delivery-rule unit tests, webhook tests with fixtures, order state-machine tests, Playwright happy path: home → product → exact-time checkout in Rome → confirmation → admin accept → delivered)
-    - Lint/type rules, CI pipeline, definition of done
-
-11. deployment-render
-    - render.yaml: Frankfurt services, env vars, health checks, pre-deploy Alembic migrations, cron jobs
-    - Custom domains (romafiorita.com, www → apex redirect, admin.romafiorita.com, api.romafiorita.com) + SSL
-    - DNS checklist (Render records + Resend SPF/DKIM/DMARC), R2 bucket + CORS
-    - Stripe live keys and webhook endpoint (https://api.romafiorita.com/webhooks/stripe), backups, zero-downtime deploys
-    - Never let free-tier instances sleep in production
-    - Basic monitoring (health endpoint, error logging)
-
-12. legal-and-compliance-italy
-    - Footer business identity: "Roma Fiorita" trading name + legal company name, address in Rome, Partita IVA, PEC (placeholders until provided)
-    - Terms of sale: perishable goods are excluded from the 14-day withdrawal right; substitution policy; all-in price display
-    - GDPR: cookie consent before analytics, privacy policy, data retention
-    - Explicit consent for any recipient photo used in marketing
-    - Note that the accountant/lawyer must review final legal texts
-
-After creating the skills, list them with a one-line summary each.
+Rules:
+- Money: integer cents everywhere (DB, schemas, Stripe). Never floats. One money helper.
+- Time:
+  - store timestamptz in UTC
+  - business rules in Europe/Rome via zoneinfo
+  - never use naive datetimes
+  - DST-safe slot generation (test the March and October switches)
+- IDs: UUID primary keys internally; public order number RF-YYYY-NNNNN (sequence per year, gap-tolerant); secure random tokens for tracking and payment links.
+- API:
+  - versioned under /v1
+  - consistent error envelope {error: {code, message, details, request_id}}
+  - cursor or limit/offset pagination with a max page size
+  - filtering and sorting whitelists
+  - explicit response_model on every route
+  - proper status codes
+  - an Idempotency-Key header on POST /checkout, /pay/{token}/intent and admin money actions
+- OpenAPI:
+  - meaningful operation_ids (for client generation), tags, and examples on key schemas
+  - enums as string enums
+  - no `Any`
+  - export openapi.json in CI and fail on unintended breaking changes (e.g. oasdiff)
+- Config: everything via env (pydantic-settings), validated at startup; .env.example kept complete.
+- Logging: structured JSON with request_id/correlation_id; never log card data, tokens, secrets or full addresses.
+- Every DB change goes through Alembic: reversible, data-preserving; no destructive migration without a backup step and explicit approval from me.
 
 ══════════════════════════════════════
-PHASE 1 — SCAFFOLD THE MONOREPO (no business features yet)
+4. DOMAIN — TARGET SPEC
 ══════════════════════════════════════
-1. Initialise the monorepo "romafiorita":
-   - pnpm workspaces, apps/web, apps/admin, apps/api, packages/ui-tokens, packages/api-client
-   - root scripts: dev, build, lint, typecheck, test
-2. apps/web:
-   - Next.js + Tailwind + shadcn/ui + next-intl with /it and /en routes
-   - Pink theme from ui-tokens, fonts via next/font
-   - Layout with header (Roma Fiorita wordmark, nav, IT|EN switcher, cart icon), footer (legal links, business identity placeholders, payment icons) and a cookie-consent banner
-   - A placeholder home page using real components (hero with the brand headline, Button, Card, ProductCard with sample data)
-   - Default metadata, favicon placeholder, robots.txt and a sitemap stub for romafiorita.com
-3. apps/admin:
-   - Next.js + Tailwind + shadcn/ui with the blue/white theme
-   - Navy sidebar with "Roma Fiorita · Admin" (Dashboard, Orders, Delivery Schedule, Products, Customers, Payments, Analytics, Settings), top bar, login page
-   - Placeholder pages with correct layout and empty states
-4. apps/api:
-   - FastAPI with health endpoint, settings, async DB session, Alembic initialised
-   - Base models: User/Staff + roles, Product, ProductVariant, AddOn, DeliveryZone, TimeSlotRule, Order, OrderItem, OrderEvent (audit log), Customer, Recipient, Reminder, Payment, StripeEvent
-   - First migration and seed script with sample Roma Fiorita products in IT/EN (e.g. "Rose di Roma", "Primavera Romana", "Mimosa 8 Marzo") and Rome delivery zones
-   - OpenAPI → packages/api-client generation script
-5. docker-compose.yml (Postgres 16, Redis), .env.example files, render.yaml draft with the romafiorita.com domains.
-6. Tooling: ESLint, Prettier, Ruff, mypy, pre-commit, GitHub Actions CI, base tests passing.
-7. README.md ("Roma Fiorita — romafiorita.com") with setup steps.
+A) Catalog
+- Product: slug (IT/EN), name/description IT/EN, occasions, category, images, SEO title/description IT/EN, active, sort order.
+- EXACTLY three variants per product, tier enum STANDARD | PREMIUM | LUXURY. Each variant has:
+  - price_cents
+  - description IT/EN, images
+  - active
+  - is_default (exactly one per product)
+  - same_day / exact_time eligibility
+  - optional stock
+- Constraints: unique (product_id, tier); at least one active variant; DB-level checks where possible.
+- Add-ons (card, teddy, balloon, vase) with prices. No alcohol or food at launch, enforced by category config.
+- Public endpoints return only active items, localised by ?locale=it|en with fallback.
+- Bulk price change with preview (dry-run) and apply, audited.
 
-Then STOP and report:
-- the file tree (top 3 levels)
-- the commands to run everything locally
-- what was created
-- any decisions or assumptions you made
-- the proposed plan for Phase 2
+B) Delivery engine (pure domain module, fully unit-tested)
+- Zones by postcode (CAP): Rome CAPs 00118–00199 (configurable table) are ROME; every other valid Italian CAP is NATIONAL; anything else is rejected.
+- Delivery types:
+  - ROME_STANDARD, ROME_WINDOW, ROME_EXACT
+  - NATIONAL_COURIER (next working day; no Sundays/holidays, configurable)
+- Settings (DB, editable by admin):
+  - same-day cut-off per zone
+  - exact-time minimum notice (e.g. 3h)
+  - window and exact-time fees
+  - slot length 15 min, operating hours
+  - blocked dates
+  - peak-day capacity
+  - capacity per slot / per rider
+- Slot availability = capacity − confirmed or held bookings.
+- Booking a slot must be race-safe: transactional, SELECT … FOR UPDATE or an atomic counter with a constraint. Two simultaneous checkouts can never overbook.
+- Slot reservations expire if payment isn't completed within N minutes.
+- Endpoints: /delivery/check, /delivery/slots. Responses state times in Europe/Rome and include ISO timestamps so the frontend can show the buyer's local time.
+
+C) Pricing
+- Server-side quote only: variant price + add-ons + delivery/time fee − discount = total, all in cents.
+- The client never sends prices; it sends IDs only.
+- Discount codes: percent or fixed, expiry, usage limit, per-customer limit.
+
+D) Orders & lifecycle (explicit state machine in domain/, transitions table-driven)
+- PENDING_PAYMENT → NEW (payment authorised) → ACCEPTED (payment captured) → AWAITING_PHOTO → PHOTO_SENT → APPROVED → OUT_FOR_DELIVERY → DELIVERED
+- Side states: DECLINED (hold released or refunded), CANCELLED, REFUNDED, PARTIALLY_REFUNDED, PROBLEM, PAYMENT_REQUESTED (custom orders), EXPIRED
+- For each transition, define:
+  - allowed roles
+  - guards (e.g. a photo is required before PHOTO_SENT)
+  - side effects (emails, SSE event, capture/cancel the Stripe hold, audit log)
+- "Accept with change": proposes a substitution or new time; the sender approves via a token link before capture.
+- Auto-accept setting; alert jobs for orders not accepted within X minutes and for holds about to expire. Card holds last ~7 days, PayPal 10 days (extendable to 20), Klarna 28 days.
+- Every change writes an OrderEvent (who, when, from, to, payload).
+- Order captures:
+  - sender (name, email, phone E.164, country, locale)
+  - recipient (name, phone, address, CAP, address type HOME/OFFICE/HOSPITAL/FUNERAL_HOME/HOTEL, notes)
+  - card message (length limit), hide_sender
+  - delivery type/date/slot, rider
+  - photos, items (product + variant snapshot: name, tier, price at time of order)
+- Tracking: GET /orders/track/{token} returns a public-safe view (no sender email, no payment details).
+
+E) Payments (Stripe), behind a PaymentProvider interface so a Mollie adapter could be added later
+- Checkout:
+  - PaymentIntent in EUR, capture_method=manual for website orders, automatic for payment requests
+  - automatic_payment_methods enabled (cards, Apple Pay, Google Pay, PayPal, Klarna)
+  - metadata: order_id and order number
+  - statement descriptor suffix ROMAFIORITA
+  - idempotency keys on every Stripe call
+- Webhooks (/v1/webhooks/stripe):
+  - verify the signature
+  - store each event id (unique) for idempotency; process asynchronously; return 2xx fast
+  - handle: payment_intent.amount_capturable_updated, payment_intent.succeeded, payment_intent.payment_failed, payment_intent.canceled, charge.refunded, charge.dispute.created/closed, payout.paid/failed
+  - never trust redirect results alone; the webhook is the source of truth
+- Admin money actions (OWNER/MANAGER only, audited, idempotent): capture, cancel hold, full/partial refund with reason.
+- Admin payments API:
+  - payments list (source: WEBSITE / PHONE / PAYMENT_REQUEST; status: held / captured / failed / refunded / disputed; fee and net, using the balance transaction)
+  - held payments with time-to-expiry
+  - refunds, payouts, balance, disputes with evidence deadline
+  - monthly report (CSV), for the accountant
+  - cache Stripe reads sensibly; paginate through the Stripe API
+
+F) Custom-order payment requests (anti-scam, trust-first)
+- Admin creates a request:
+  - catalogue items (product + variant) and/or free-text custom items with a reference photo
+  - recipient, delivery, card message, sender contact, locale
+  - optional discount
+  - expiry (default 48h)
+- The server computes the total and creates the order in PAYMENT_REQUESTED with a 32+ byte random token. Store only a hash of the token.
+- Public endpoints:
+  - GET /v1/pay/{token}: summary, expiry, status; noindex
+  - POST /v1/pay/{token}/intent: server-created PaymentIntent, automatic capture
+  - POST /v1/verify: order number + email → confirms whether the request is genuine (rate-limited, no data leaks)
+- Lifecycle: sent → viewed (record the first-viewed time) → paid → enters the normal lifecycle at ACCEPTED; or expired/cancelled. Editing before payment regenerates the token.
+- Branded PDF "Order summary / Payment request" (WeasyPrint or similar):
+  - logo, order number, items with photos, delivery details, total, link + QR, expiry, business contacts from settings
+  - the title is configurable
+  - it must NOT be labelled a fiscal invoice ("fattura"), because there is no VAT number yet
+- Pre-filled WhatsApp text (wa.me link) and branded email templates, IT and EN.
+- Optional reminder job 24h before expiry.
+
+G) Notifications & jobs (arq + cron)
+- Emails (IT/EN, Resend, from ordini@romafiorita.com):
+  - order received, accepted, accept-with-change approval
+  - bouquet photo, out for delivery, delivered
+  - declined/refunded
+  - payment request, request reminder
+  - occasion reminders (7 and 2 days before)
+  - abandoned checkout
+- All sending is async with retries, backoff and dead-letter logging; templates are versioned.
+- Real-time admin events: GET /v1/admin/orders/stream (SSE, authenticated, heartbeat, Redis pub/sub so it works across instances); plus Web Push subscriptions.
+- WhatsApp Business API adapter behind a feature flag (off by default).
+
+H) Uploads
+- R2 signed PUT URLs: allowed MIME types, max size, server-generated keys.
+- After upload, validate and strip EXIF location data; generate thumbnails (worker).
+- Bouquet photos are linked to orders and served via signed or unguessable URLs.
+
+I) Insights
+- Google Search Console via a service account: clicks, impressions, CTR, position, top queries, landing pages, tracked keywords, sitemap/indexing status.
+- Cached daily by a cron job into tables; admin endpoints read from the cache with a range parameter.
+- Own sales analytics from our DB:
+  - revenue per day
+  - by occasion, tier, delivery type, sender country
+  - new vs repeat customers
+  - on-time %
+
+J) Content & settings
+- FAQs, cities/neighbourhood landing data (cut-off, fee, CAPs covered, notes), business identity (company name, address, VAT number, PEC, phone, WhatsApp) are all editable in settings.
+- Business identity fields are nullable; the API returns null until the client provides them.
+- Reviews: store only REAL reviews (with source and date). No seeded fake ratings or counts in production data or fixtures that could ship.
 
 ══════════════════════════════════════
-PHASE 2+ — FEATURE ROADMAP (plan only for now; build after my approval)
+5. SECURITY & COMPLIANCE
 ══════════════════════════════════════
-2. Catalog: products, occasions, filters, product page with delivery checker, add-ons, card message
-3. Delivery engine: Rome zones, slots, capacity, cut-offs, exact-time booking, national courier (with full unit tests)
-4. Cart + checkout + Stripe payments + webhooks + confirmation + tracking page
-5. Admin: real-time order inbox, accept/decline (auto-refund), order processing pipeline, bouquet photo upload, rider assignment, delivery schedule
-6. Admin: products CRUD with image upload, settings (zones, fees, slots, blocked dates, staff roles)
-7. Admin: Stripe payments page (history, refunds, payouts, disputes, CSV), dashboard KPIs, analytics
-8. Emails, reminders, customer accounts (order history, saved recipients, important dates)
-9. SEO: Rome neighbourhood + Italian city landing pages, blog/guide pages, sitemaps, JSON-LD, performance pass
-10. Hardening: E2E tests, security review, accessibility audit, Render production deploy on romafiorita.com
+- Auth (admin):
+  - email + password hashed with argon2
+  - short-lived JWT access token + rotating refresh token in httpOnly, Secure, SameSite=Lax cookies, scoped to .romafiorita.com
+  - CSRF protection for cookie-authenticated mutations
+  - login rate limiting and lockout
+  - optional TOTP 2FA for OWNER
+- Roles: OWNER, MANAGER, FLORIST, RIDER. Enforce with dependencies on every admin route.
+  - FLORIST/RIDER: only operational order data, no payments, no customer emails beyond what the task needs
+  - RIDER: only orders assigned to them
+- Object-level authorisation tests (no IDOR).
+- CORS: only https://romafiorita.com, https://www.romafiorita.com, https://admin.romafiorita.com (+ localhost in dev).
+- Security headers. Request size limits. Rate limits (Redis) on public endpoints, especially checkout, verify, pay, delivery/check and reminders.
+- Validate everything with Pydantic: strict types, max lengths, E.164 phones, CAP format, emails.
+- GDPR:
+  - data minimisation; retention jobs (e.g. anonymise recipient addresses and messages after N months; configurable)
+  - export/delete customer data endpoints for the OWNER
+  - marketing consent stored separately
+  - consent required for any recipient photo used in marketing
+- Never store card data (Stripe only). Secrets only in env. Dependency audit in CI.
+- Legal text: terms of sale must include the perishable-goods exclusion from the 14-day withdrawal right, the substitution policy and all-in prices. Expose versioned legal documents via the content API.
 
 ══════════════════════════════════════
-WORKING RULES
+6. RELIABILITY, PERFORMANCE, OBSERVABILITY
 ══════════════════════════════════════
-- Before each phase, show a short plan; ask me only if a decision is truly blocking.
-- Read the relevant skill before working in its area, and keep skills updated if a convention changes.
-- Never hard-code user-facing text: every string goes through i18n (it + en).
-- Never commit secrets; use .env and .env.example.
-- Money in integer cents (EUR); times stored in UTC, business logic in Europe/Rome.
-- Small, focused commits with Conventional Commit messages.
-- Every feature ships with tests and passes lint/typecheck before you call it done.
-- Placeholders to keep until I provide real values:
-  - legal company name, shop address in Rome, Partita IVA, PEC, phone/WhatsApp number
-  - same-day cut-off [14:00], exact-time minimum notice [3h]
-  - time-window fee €[X], exact-time fee €[Y]
+- DB:
+  - indexes for every frequent filter: orders(status, delivery_date), orders(order_number), slots(date), payments(created_at), etc.
+  - fix N+1 queries with selectinload/joinedload
+  - connection pooling tuned for Render
+  - statement timeouts
+- Caching: catalog and settings in Redis with invalidation on admin updates; ETag/Cache-Control on public GETs.
+- Health: /healthz (liveness) and /readyz (DB + Redis + config).
+- Graceful shutdown; background work never runs inside request handlers (except quick enqueue).
+- Error tracking (Sentry or similar, PII scrubbed). Metrics: request latency, error rate, job failures, webhook lag.
+- Load test the critical paths (checkout, slots) with k6 or Locust, including Valentine's-day style bursts. Report the results.
 
-Start now with Phase 0.
+══════════════════════════════════════
+7. TESTING & QUALITY
+══════════════════════════════════════
+- Tools: pytest + pytest-asyncio + httpx AsyncClient; testcontainers (Postgres + Redis) or a dedicated test DB; factory_boy factories; freezegun/time-machine for time.
+- Required coverage:
+  - domain (delivery engine, pricing, state machine): ~100%, including DST, cut-offs, blocked dates and capacity races (concurrency test)
+  - Stripe: webhook fixtures, idempotent replay, capture/cancel/refund flows (stripe-mock or recorded fixtures)
+  - payment requests: token expiry, single-use, verify endpoint, no data leaks
+  - auth/roles: every admin route tested per role (allowed/denied)
+  - contract: openapi.json snapshot plus breaking-change check
+- Overall coverage target: 85%+, with critical modules near 100%.
+- Tooling:
+  - Ruff (lint + format), mypy strict on app/
+  - pre-commit
+  - GitHub Actions: lint, typecheck, tests, pip-audit, OpenAPI diff, migration check (upgrade → downgrade → upgrade on an empty DB and on a copy of seed data)
+
+══════════════════════════════════════
+8. FRONTEND CONTRACT (must be satisfied; keep old routes working until the frontend migrates)
+══════════════════════════════════════
+Public:
+- GET  /v1/catalog/products?occasion=&category=&locale=
+- GET  /v1/catalog/products/{slug}
+- GET  /v1/catalog/occasions
+- GET  /v1/delivery/check?postcode=&date=
+- GET  /v1/delivery/slots?postcode=&date=
+- POST /v1/cart/quote
+- POST /v1/checkout
+- GET  /v1/orders/track/{token}
+- POST /v1/reminders
+- GET  /v1/content/faqs, /v1/content/cities, /v1/content/business
+- GET  /v1/pay/{token} · POST /v1/pay/{token}/intent · POST /v1/verify
+
+Admin:
+- POST /v1/admin/auth/login · /logout · /refresh · GET /v1/admin/auth/me
+- GET  /v1/admin/dashboard
+- GET  /v1/admin/orders?status=&q=&date= · GET /v1/admin/orders/{id}
+- POST /v1/admin/orders/{id}/accept · /accept-with-change · /decline · /photo · /send-photo · /approve · /dispatch · /deliver · /refund
+- GET  /v1/admin/orders/stream (SSE)
+- GET/POST/PATCH /v1/admin/products · PATCH /v1/admin/products/{id}/variants · POST /v1/admin/products/bulk-price
+- POST /v1/admin/uploads/sign
+- POST /v1/admin/payment-requests · GET (list, ?status=) · PATCH /{id} · POST /{id}/cancel · /resend · GET /{id}/pdf
+- GET  /v1/admin/payments?source=&status=&from=&to= · /payments/held · POST /payments/{id}/capture · /cancel-hold
+- GET  /v1/admin/refunds · /payouts · /balance · /disputes · /reports/monthly
+- GET  /v1/admin/insights/seo?range= · /insights/sales?range=
+- GET/PATCH /v1/admin/settings (zones, fees, slots, blocked dates, capacity, notification recipients, business identity)
+- GET/POST/PATCH /v1/admin/staff
+
+If an existing route differs, keep it working (deprecated, documented with a sunset note) and add the new one. Never silently change a response shape.
+
+══════════════════════════════════════
+9. PROJECT GUIDANCE FILES
+══════════════════════════════════════
+- Update or create a root CLAUDE.md (under ~200 lines): summary, architecture map, commands, conventions, definition of done, "backend only; the frontend is a separate repo and consumes openapi.json".
+- Skills in .claude/skills/<name>/SKILL.md, each with YAML frontmatter (name, description = when to use) and concrete rules, checklists and code examples:
+  1. backend-architecture
+  2. api-design-and-openapi
+  3. database-and-migrations
+  4. delivery-engine
+  5. pricing-and-catalog-tiers
+  6. order-lifecycle
+  7. stripe-payments
+  8. payment-requests
+  9. notifications-and-jobs
+  10. uploads-r2
+  11. security-and-gdpr
+  12. testing-backend
+  13. observability-and-performance
+  14. deploy-render
+- Docs:
+  - docs/architecture.md (with a diagram)
+  - docs/runbook.md: deploy, rollback, rotate Stripe keys, replay webhooks, restore DB, peak-day checklist
+  - docs/api-changelog.md
+  - docs/adr/ (one ADR per significant decision)
+
+══════════════════════════════════════
+10. PHASES
+══════════════════════════════════════
+Phase 0: Audit + plan (section 2). STOP.
+Phase 1: Safety net. CI, lint/typecheck baseline, test infrastructure, characterization tests for current behaviour of critical endpoints (checkout, webhooks, order status changes), OpenAPI snapshot. No behaviour changes. STOP.
+Phase 2: Critical fixes. Security and money issues from the audit: webhook verification and idempotency, server-side pricing, integer cents, slot race safety, timezone correctness, role checks, CORS, secrets. STOP.
+Phase 3: Structure. Move logic into domain/services/repositories gradually; config and error envelope; logging; health checks. STOP.
+Phase 4: Features to spec:
+- product tiers
+- manual-capture checkout + accept/decline
+- full state machine
+- payment requests + PDF + verify
+- admin payments API
+STOP.
+Phase 5: Jobs and integrations. Notifications, reminders, SSE via Redis, R2 processing, Search Console cache, retention jobs. STOP.
+Phase 6: Hardening. Performance/indexes, caching, load test, observability, GDPR endpoints, docs, runbook, Render config (Frankfurt, pre-deploy migrations, health checks, cron, no sleeping instances), final OpenAPI publish for the frontend. STOP with a final report.
+
+══════════════════════════════════════
+11. WORKING RULES
+══════════════════════════════════════
+- Small, reviewable commits (Conventional Commits). Each step keeps the test suite green.
+- Before changing a behaviour, write a test that captures the current behaviour, then the new expected one.
+- Never drop or rename DB columns or tables without a two-step migration (expand → migrate data → contract) and my approval.
+- Never run destructive commands against non-local databases. Never touch production keys.
+- When the spec and the existing code disagree, ask, or record the decision in an ADR. Don't silently pick one.
+- Keep docs, skills and openapi.json updated in the same commit as the code.
+- Placeholders until I confirm: Rome CAP list, cut-off times, fees, slot capacity, expiry hours, retention period, business identity.
+
+Start with Phase 0 (audit only).
