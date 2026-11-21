@@ -19,6 +19,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -151,7 +152,9 @@ class Recipient(Base, TimestampMixin):
     __tablename__ = "recipients"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"))
+    customer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("customers.id"), index=True
+    )
     name: Mapped[str] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(32))
     address_line: Mapped[str] = mapped_column(String(512))
@@ -274,6 +277,11 @@ class SlotCapacity(Base, TimestampMixin):
 
 class Order(Base, TimestampMixin):
     __tablename__ = "orders"
+    __table_args__ = (
+        # Admin queue filters and dashboard/report date scans.
+        Index("ix_orders_status_delivery_date", "status", "delivery_date"),
+        Index("ix_orders_created_at", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     # Nullable only transiently: assigned from the id right after flush, before
@@ -284,11 +292,13 @@ class Order(Base, TimestampMixin):
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus), default=OrderStatus.PENDING_PAYMENT, index=True
     )
-    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"))
+    customer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("customers.id"), index=True
+    )
     recipient_id: Mapped[int | None] = mapped_column(ForeignKey("recipients.id"))
 
     delivery_type: Mapped[DeliveryType] = mapped_column(Enum(DeliveryType))
-    delivery_date: Mapped[date | None] = mapped_column(Date)
+    delivery_date: Mapped[date | None] = mapped_column(Date, index=True)
     slot_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     slot_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -320,8 +330,10 @@ class OrderItem(Base):
     __tablename__ = "order_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
-    product_id: Mapped[int | None] = mapped_column(ForeignKey("products.id"))
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
+    product_id: Mapped[int | None] = mapped_column(
+        ForeignKey("products.id"), index=True
+    )
     variant_id: Mapped[int | None] = mapped_column(
         ForeignKey("product_variants.id")
     )
@@ -337,7 +349,7 @@ class OrderEvent(Base):
     __tablename__ = "order_events"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     actor: Mapped[str] = mapped_column(String(64))  # staff email or "system"
     from_status: Mapped[OrderStatus | None] = mapped_column(Enum(OrderStatus))
     to_status: Mapped[OrderStatus | None] = mapped_column(Enum(OrderStatus))
@@ -366,9 +378,10 @@ class Reminder(Base, TimestampMixin):
 
 class Payment(Base, TimestampMixin):
     __tablename__ = "payments"
+    __table_args__ = (Index("ix_payments_created_at", "created_at"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     stripe_payment_intent_id: Mapped[str | None] = mapped_column(
         String(255), index=True
     )
@@ -388,7 +401,7 @@ class PaymentRequest(Base, TimestampMixin):
     __tablename__ = "payment_requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     status: Mapped[PaymentRequestStatus] = mapped_column(
         Enum(PaymentRequestStatus), default=PaymentRequestStatus.SENT, index=True

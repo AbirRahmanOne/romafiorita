@@ -1265,6 +1265,90 @@
         }
       }
     },
+    "/v1/admin/gdpr/export": {
+      "get": {
+        "tags": [
+          "admin-gdpr"
+        ],
+        "summary": "Export",
+        "operationId": "export_v1_admin_gdpr_export_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "title": "Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GdprExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/gdpr/delete": {
+      "post": {
+        "tags": [
+          "admin-gdpr"
+        ],
+        "summary": "Delete",
+        "operationId": "delete_v1_admin_gdpr_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GdprDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GdprDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/catalog/products": {
       "get": {
         "tags": [
@@ -2709,6 +2793,74 @@
           "items"
         ],
         "title": "DisputesResponse"
+      },
+      "GdprDeleteRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "GdprDeleteRequest"
+      },
+      "GdprDeleteResponse": {
+        "properties": {
+          "anonymised": {
+            "type": "boolean",
+            "title": "Anonymised"
+          }
+        },
+        "type": "object",
+        "required": [
+          "anonymised"
+        ],
+        "title": "GdprDeleteResponse"
+      },
+      "GdprExportResponse": {
+        "properties": {
+          "customer": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Customer"
+          },
+          "recipients": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Recipients"
+          },
+          "orders": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Orders"
+          },
+          "payment_requests": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Payment Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer",
+          "recipients",
+          "orders",
+          "payment_requests"
+        ],
+        "title": "GdprExportResponse"
       },
       "GoogleSummary": {
         "properties": {

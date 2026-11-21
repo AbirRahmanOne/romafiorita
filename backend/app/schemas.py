@@ -589,6 +589,21 @@ class SalesInsights(BaseModel):
     on_time_pct: float
 
 
+class GdprDeleteRequest(BaseModel):
+    email: EmailStr
+
+
+class GdprDeleteResponse(BaseModel):
+    anonymised: bool
+
+
+class GdprExportResponse(BaseModel):
+    customer: dict[str, object]
+    recipients: list[dict[str, object]]
+    orders: list[dict[str, object]]
+    payment_requests: list[dict[str, object]]
+
+
 class SeoInsights(BaseModel):
     # Backed by Google Search Console — empty until the GSC integration lands.
     kpis: list[dict[str, object]] = []
